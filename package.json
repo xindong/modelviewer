@@ -23,7 +23,8 @@
     "README.md",
     "docs/cli-design.md",
     "Dockerfile.node",
-    "THIRD_PARTY_FBX2GLTF_LICENSE.txt"
+    "THIRD_PARTY_FBX2GLTF_LICENSE.txt",
+    "LICENSE"
   ],
   "sideEffects": false,
   "main": "./dist/mivo-model-viewer.js",
@@ -93,5 +94,13 @@
   "optionalDependencies": {
     "occt-import-js": "0.0.23",
     "webgpu": "0.6.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xindong/modelviewer.git"
+  },
+  "homepage": "https://github.com/xindong/modelviewer#readme",
+  "bugs": {
+    "url": "https://github.com/xindong/modelviewer/issues"
   }
 }
