@@ -188,3 +188,5 @@ export const inspectModel = (source, options) => processor().inspectModel(source
 export const renderModelImages = (source, options) => processor().renderModelImages(source, options);
 export const convertModelToGlb = (source, options) => processor().convertModelToGlb(source, options);
 export const optimizeModel = (source, options) => processor().optimizeModel(source, options);
+
+export { createPreviewPool as createModelPreviewProcessor } from './preview/pool.mjs';
