@@ -169,6 +169,88 @@ try {
 }
 ```
 
+### 常驻模型预览 API
+
+`createModelPreviewProcessor(options?)` 专用于高频预览，返回 `{ renderModelImages, close }`。
+每个实例按需启动一个常驻隔离 worker，串行执行任务，复用模型准备缓存和 GPU；原有
+`createModelProcessor`、独立 Node 方法和 CLI 保持原有行为。loader、GPU 与进程清理实现位于
+独立的 `node/preview/`，基础校验、资源解析、像素处理、设备选择、进程清理与原生 FBX 转换
+复用 `node/` 公共实现。导入 Node 入口不会在宿主进程初始化图形设备。
+
+```js
+import { createModelPreviewProcessor } from 'mivo-model-viewer/node'
+import { readFile, writeFile } from 'node:fs/promises'
+
+const processor = createModelPreviewProcessor({
+  maxQueue: 32,
+  maxTasks: 64,
+  maxRssBytes: 1024 ** 3,
+  cacheEntries: 4,
+  cacheBytes: 64 * 1024 ** 2,
+  gpuPixels: 4 * 1024 ** 2,
+  idleMs: 60_000
+})
+try {
+  // 字节输入支持准备结果缓存；同样支持本地路径和 ZIP 资源包。
+  const source = { bytes: await readFile('/data/model.glb'), fileName: 'model.glb' }
+  const controller = new AbortController()
+  const result = await processor.renderModelImages(source, {
+    timeout: 120, // 可省略，默认 120 秒；包含排队、进程启动和执行时间
+    width: 512,
+    height: 512,
+    views: ['front', 'side', 'top'],
+    signal: controller.signal,
+    onProgress: message => console.log(message)
+  })
+  for (const output of result.outputs) {
+    await writeFile(`/data/${output.name}`, output.bytes)
+  }
+  console.log(result.data.timings)
+} finally {
+  await processor.close()
+}
+```
+
+池预算（每个实例独立，均为安全整数）：
+
+| 选项 | 默认值 | 行为 |
+|------|--------|------|
+| `maxQueue` | `32` | 等待队列上限，不含正在执行的任务；满时拒绝并返回 `QUEUE_FULL`，`0` 禁止排队 |
+| `maxTasks` | `64` | worker 完成指定任务数后回收，必须大于 0 |
+| `maxRssBytes` | `1 GiB` | 每次任务结束后检查 RSS，达到预算回收 worker，必须大于 0；不是执行期间的硬内存上限 |
+| `cacheEntries` | `4` | 内存 LRU 最多保留的准备结果数，`0` 禁用缓存 |
+| `cacheBytes` | `64 MiB` | 缓存 GLB 字节和诊断文本的预算；不包含全部 JS/GPU 开销，`0` 不保留准备结果 |
+| `gpuPixels` | `4,194,304` | 可常驻 GPU 渲染目标的最大像素数（宽 × 高），`0` 禁止复用 |
+| `idleMs` | `60,000` | 空闲回收时间（毫秒），`0` 禁用空闲回收 |
+
+使用 `AbortSignal` 取消：排队任务直接移除；运行中的任务会终止并回收整个 worker，
+POSIX 系统同时终止进程组中的 native FBX 子进程，清理完成后才结束该任务。超时采用相同回收机制，
+返回 `TIMEOUT`。任务错误也会回收 worker，后续任务按需创建新进程；清理失败时池停止接收任务。
+`close()` 可重复调用，会拒绝等待及运行中的任务，并等待进程和临时文件清理；关闭后调用返回
+`PREVIEW_DISPOSED`。预览 API 固定禁用网络。`signal` 和 `onProgress` 留在父进程，
+不放入 IPC；worker 的带任务 ID 的进度消息会转发给当前任务的 `onProgress`，回调抛错不会中断渲染。
+
+缓存只保存在 worker 内存中，只缓存成功渲染过的准备 GLB 与诊断信息，不缓存最终图片。
+缓存键包含输入字节、文件名、资源字节，以及影响模型准备的加载参数（归档入口、FBX 后端、
+模型变换、纹理解码限制、STEP 参数、资源预算和保真约束等）。尺寸、视角、投影、材质显示、
+灯光、设备、图片编码和超时不参与准备缓存键，因此 thumbnail/detail 可以共享准备结果。
+路径输入、指定 `resourceDirs` 或
+`fbxBinary` 的任务不缓存准备结果，避免复用已变化的外部文件。回收 worker 会清空缓存。
+未压缩且没有外部资源的 GLB 可以直接进入渲染快速路径，其余输入走完整准备流程。
+
+worker 最多保留一个 GPU 设备与渲染目标；设备选择一致且像素数在预算内时复用，尺寸变化会调整目标。
+超出 `gpuPixels` 的任务仍可渲染，但使用临时设备，任务完成后释放，同时丢弃原有常驻设备。
+模型场景和临时资源每次任务都会清理。
+
+成功结果类型为 `PreviewResult`，包含 `ok`、`outputs`、`warnings`、`data.timings` 和
+`data.render`，没有旧 `ModelResult` 的 `schemaVersion`、`command`、`input`、`entry`、`error` 字段。
+`PreviewRenderOptions` 整体可省略；超时默认值来自标准 `validateOptions`，为 120 秒，
+显式超时范围为 `(0, 86400]` 秒。渲染选项在入队前校验并标准化，worker 会再次校验。
+附加耗时字段为 `startupMs`、`prepareMs`、`gpuInitMs`、`gpuResizeMs`，附加状态字段为
+`cacheHit`、`fastPath`、`gpuReused`；公共 `ModelTimings` 将这些字段声明为可选，以兼容旧 API。
+预览结果使用 `PreviewTimings`，不要求旧处理器的 `executionMs`；各阶段未执行时可能为 `null`。
+`queueMs`、`workerMs`、`totalMs` 均为毫秒且可能覆盖其他阶段，不应直接相加。
+
 ### 原生 FBX 转换与运行环境
 
 Node 的 FBX 默认使用依赖内的 FBX2glTF，不需要全局安装转换器。
