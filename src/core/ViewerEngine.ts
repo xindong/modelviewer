@@ -1246,6 +1246,9 @@ export class ViewerEngine {
   }
 
   dispose() {
+    // 让仍在加载中的模型作废：loadFromFile 返回时发现 token 过期，会直接释放
+    // 迟到的结果，不再挂进已销毁的场景
+    this.loadToken += 1
     cancelAnimationFrame(this.animationId)
     window.removeEventListener('resize', this.handleResize)
     this.clearModel()

@@ -2,7 +2,7 @@ import { ViewerEngine } from '../core/ViewerEngine'
 import {
   isSupportedModelFile,
   resolveModelInput,
-  SUPPORTED_ACCEPT,
+  getSupportedAccept,
   type PresetView,
   type ProjectionMode,
   type TextureMode,
@@ -277,7 +277,7 @@ function buildTemplate(copy: ViewerCopy, ui: Required<ModelViewerUIOptions>) {
               }
             </div>
           </div>
-          <input class="mv-file-input" data-mv="fileInput" type="file" accept="${SUPPORTED_ACCEPT}" />`
+          <input class="mv-file-input" data-mv="fileInput" type="file" accept="${getSupportedAccept()}" />`
         : ''
     }
 
