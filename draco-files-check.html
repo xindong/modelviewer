@@ -2,7 +2,7 @@
 <!--
   Manual / automated check for setDracoDecoderFiles (self-hosted Draco decoder).
 
-  Needs a Draco-compressed GLB at public/box-draco.glb (git-ignored). Generate it with:
+  Needs a Draco-compressed GLB at public/draco-sample.glb (git-ignored). Generate it with:
     node scripts/make-draco-sample.mjs
 
   Query: ?mode=control  → no override (a blocked CDN must make Draco loading fail)
@@ -20,7 +20,7 @@ const toBlobUrl = async (src, type) => URL.createObjectURL(new Blob([await (awai
 
 window.run = async () => {
   const out = { mode }
-  const model = await (await fetch('/box-draco.glb')).blob()
+  const model = await (await fetch('/draco-sample.glb')).blob()
   if (mode === 'files') {
     // validation
     out.missingWasm = (() => { try { setDracoDecoderFiles({ 'draco_wasm_wrapper.js': 'x' }); return 'accepted' } catch (e) { return e.message } })()
@@ -36,7 +36,7 @@ window.run = async () => {
   }
   const loader = new ModelLoader()
   try {
-    const file = new File([model], 'box-draco.glb')
+    const file = new File([model], 'draco-sample.glb')
     const res = await loader.loadFromFile(file)
     let tris = 0
     res.object.traverse((o) => { if (o.isMesh) tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3 })
@@ -45,7 +45,7 @@ window.run = async () => {
   loader.dispose()
   // the thumbnail renderer goes through the same loader
   const r = createThumbnailRenderer({ idleMs: 0, width: 256 })
-  out.thumb = await r.render({ model, fileName: 'box-draco.glb' }).then((i) => ({ ok: true, mime: i.mime }), (e) => ({ ok: false, error: String(e.message).slice(0, 120) }))
+  out.thumb = await r.render({ model, fileName: 'draco-sample.glb' }).then((i) => ({ ok: true, mime: i.mime }), (e) => ({ ok: false, error: String(e.message).slice(0, 120) }))
   r.dispose()
   return out
 }

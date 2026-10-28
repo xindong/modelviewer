@@ -69,7 +69,11 @@ test('without @napi-rs/canvas: modules load and the texture adapters fail with O
   assert.deepEqual(result.preview, expected);
 });
 
-test('with the packages installed, the adapters install and dispose normally', () => {
+// `npm install --omit=optional` (or a platform without a prebuilt binary) is a supported
+// install: the success path can only be asserted when the package actually loads here.
+const canvasInstalled = await import('@napi-rs/canvas').then(() => true, () => false);
+
+test('with the packages installed, the adapters install and dispose normally', { skip: !canvasInstalled && '@napi-rs/canvas is not installed' }, () => {
   const script = `
     const { installNodeAdapters } = await import('./node/adapters.mjs');
     const adapter = await installNodeAdapters({});
