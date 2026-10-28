@@ -467,6 +467,8 @@ const { blob } = await thumbs.render({ model: blobOrFileOrUrl, fileName: 'chair.
 thumbs.dispose()     // 离开页面时释放；之后调用 render 会被拒绝
 ```
 
+`signal` 覆盖任务全生命周期：排队中取消立即拒绝，不必等前面的任务结束；运行中取消也立即拒绝，后台工作在下一个检查点终止。`dispose()` 会立即拒绝排队与运行中的全部任务。
+
 `render` 的选项与 `renderModelImage` 相同（尺寸、格式、背景、视角、投影、材质模式、灯光、全景、`signal` 等），区别是只出一张（不支持 `views`），返回带 `mime`、`width`、`height` 的 `RenderedImage`。每张图出完后会复位正交相机、全景和背景，上一张的参数不会影响下一张。
 
 ### 限定格式与自托管 Draco 解码器
@@ -483,7 +485,7 @@ import {
 
 // 只启用这些格式（扩展名，大小写与前导点均可；未知扩展名会被忽略）。
 // 不在列表内的文件：isSupportedModelFile 返回 false，ModelLoader 拒绝加载，
-// 默认 UI 的导入按钮 accept 也同步收窄。传 null 恢复全部格式。
+// 默认 UI 的导入按钮 accept 也同步收窄。ZIP 内的入口模型、直接调用 loadFromUrl 同样受限（启用 zip 不等于放行包内的 fbx）。传 null 恢复全部格式。
 setEnabledFormats(['glb', 'gltf', 'obj', 'fbx', 'stl', 'ply', 'dae', '3mf', '3ds'])
 
 // Draco 解码器默认走 gstatic CDN。自托管时指向包含 draco_decoder.js /

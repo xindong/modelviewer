@@ -1,5 +1,6 @@
 <!doctype html><html><body><script type="module">
-import { createThumbnailRenderer, setEnabledFormats } from '/src/core/index.ts'
+import { createThumbnailRenderer, setEnabledFormats, ModelLoader } from '/src/core/index.ts'
+import { zipSync } from 'fflate'
 const canvases = () => document.querySelectorAll('canvas[data-engine],div[data-mivo-render] canvas').length
 async function stats(blob) {
   const bmp = await createImageBitmap(blob)
@@ -45,6 +46,79 @@ window.run = async () => {
   r.dispose()
   out.canvasesAfterDispose = canvases()
   out.afterDispose = await r.render({ model, fileName: 'a.glb' }).then(() => false, e => String(e.message))
+  return out
+}
+const settle = (p) => p.then(() => 'resolved', (e) => e.name === 'AbortError' ? 'AbortError' : String(e.message))
+const timed = async (p) => { const t = performance.now(); const r = await settle(p); return { r, ms: Math.round(performance.now() - t) } }
+window.run2 = async (hangUrl) => {
+  const out = {}
+  const model = await (await fetch('/BoxAnimated.glb')).blob()
+
+  // P1-1：加载过程中 dispose，任务必须被拒绝，且不留 canvas、不报错
+  {
+    const r = createThumbnailRenderer({ idleMs: 0 })
+    const p = timed(r.render({ model, fileName: 'a.glb' }))
+    await new Promise(res => setTimeout(res, 15))
+    r.dispose()
+    out.disposeDuringLoad = await p
+    await new Promise(res => setTimeout(res, 400)) // 等迟到的加载回来
+    out.disposeDuringLoadCanvases = canvases()
+  }
+  // P1-1b：多个排队任务 + dispose，全部立即拒绝
+  {
+    const r = createThumbnailRenderer({ idleMs: 0 })
+    const ps = [1, 2, 3].map(() => timed(r.render({ model, fileName: 'a.glb' })))
+    await new Promise(res => setTimeout(res, 10))
+    r.dispose()
+    out.disposeWithQueue = await Promise.all(ps)
+  }
+  // P1-3：前面的任务一直不结束，后面排队的任务取消必须立即生效
+  {
+    const r = createThumbnailRenderer({ idleMs: 0 })
+    const hangAc = new AbortController()
+    const hang = timed(r.render({ model: hangUrl, fileName: 'h.glb', signal: hangAc.signal }))
+    const ac = new AbortController()
+    const queued = timed(r.render({ model, fileName: 'a.glb', signal: ac.signal }))
+    setTimeout(() => ac.abort(), 50)
+    out.queuedAbort = await queued
+    // 取消排队任务不能影响后续：释放队头后，新任务应能正常完成
+    hangAc.abort()
+    out.hangAbort = await hang
+    out.afterAbortStillWorks = await timed(r.render({ model, fileName: 'a.glb' }))
+    r.dispose()
+  }
+  // P1-3b：运行中取消（不同时机），调用方不得拿到图片，之后渲染器仍可用
+  {
+    const r = createThumbnailRenderer({ idleMs: 0 })
+    out.runningAbort = []
+    for (const delay of [0, 5, 20, 60]) {
+      const ac = new AbortController()
+      const p = timed(r.render({ model, fileName: 'a.glb', signal: ac.signal }))
+      setTimeout(() => ac.abort(), delay)
+      out.runningAbort.push(await p)
+    }
+    out.runningAbortThenOk = await timed(r.render({ model, fileName: 'a.glb' }))
+    r.dispose()
+  }
+  // P1-2：ZIP 内入口 / loadFromUrl 必须同样受格式限制
+  {
+    const glb = new Uint8Array(await model.arrayBuffer())
+    const zip = new File([zipSync({ 'm.glb': glb })], 'pack.zip', { type: 'application/zip' })
+    const loader = new ModelLoader()
+    setEnabledFormats(['zip'])
+    out.zipEntryDisabled = await loader.loadFromFile(zip).then(() => 'loaded', e => e.message)
+    setEnabledFormats(['zip', 'glb'])
+    out.zipEntryEnabled = await loader.loadFromFile(zip).then(() => 'loaded', e => e.message)
+    setEnabledFormats(['fbx'])
+    const url = URL.createObjectURL(model)
+    out.loadFromUrlDisabled = await loader.loadFromUrl(url, 'glb').then(() => 'loaded', e => e.message)
+    out.loadFromUrlDisabledUpper = await loader.loadFromUrl(url, 'GLB').then(() => 'loaded', e => e.message)
+    setEnabledFormats(null)
+    out.loadFromUrlEnabled = await loader.loadFromUrl(url, 'glb').then(() => 'loaded', e => e.message)
+    URL.revokeObjectURL(url)
+    loader.dispose()
+  }
+  out.canvasesAtEnd = canvases()
   return out
 }
 window.__ready = true

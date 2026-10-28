@@ -27,11 +27,14 @@ export type ThumbnailRenderOptions = Omit<RenderModelImageOptions, 'views'>
 
 export interface ThumbnailRenderer {
   /**
-   * 渲染一张图。调用方并发调用时按调用顺序排队串行执行；
-   * 排队中的任务可通过 `signal` 取消，运行中的任务在下一个检查点取消。
+   * 渲染一张图。并发调用按调用顺序排队，实际渲染严格串行。
+   *
+   * `signal` 覆盖任务的完整生命周期：排队中取消会立即拒绝（不等前面的任务），
+   * 运行中取消会立即拒绝，后台的加载 / 渲染在下一个检查点终止并丢弃结果。
+   * `dispose()` 同理：排队中与运行中的任务都会立即以 `ThumbnailRenderer is disposed` 拒绝。
    */
   render(options: ThumbnailRenderOptions): Promise<RenderedImage>
-  /** 立即释放引擎与 WebGL 上下文（等待中的任务会被拒绝），可重复调用 */
+  /** 立即释放引擎与 WebGL 上下文，拒绝所有未完成的任务，可重复调用 */
   dispose(): void
 }
 
@@ -41,6 +44,26 @@ const DEFAULT_SIZE = 512
 interface EngineBundle {
   engine: ViewerEngine
   host: HTMLElement
+}
+
+interface QueueItem {
+  options: ThumbnailRenderOptions
+  resolve: (image: RenderedImage) => void
+  reject: (reason: unknown) => void
+  settled: boolean
+  cleanup: () => void
+}
+
+function createAbortError(signal?: AbortSignal): Error {
+  const reason = signal?.reason
+  if (reason instanceof Error) return reason
+  const error = new Error('The operation was aborted')
+  error.name = 'AbortError'
+  return error
+}
+
+function createDisposedError(): Error {
+  return new Error('ThumbnailRenderer is disposed')
 }
 
 function createBundle(width: number, height: number): EngineBundle {
@@ -79,9 +102,9 @@ export function createThumbnailRenderer(
 
   let bundle: EngineBundle | null = null
   let disposed = false
+  let running: QueueItem | null = null
   let idleTimer: ReturnType<typeof setTimeout> | null = null
-  let pending = 0
-  let tail: Promise<unknown> = Promise.resolve()
+  const queue: QueueItem[] = []
 
   const clearIdleTimer = () => {
     if (idleTimer !== null) {
@@ -93,27 +116,40 @@ export function createThumbnailRenderer(
   const releaseBundle = () => {
     clearIdleTimer()
     if (!bundle) return
+    const current = bundle
+    bundle = null
     try {
-      bundle.engine.dispose()
+      current.engine.dispose()
     } finally {
-      bundle.host.remove()
-      bundle = null
+      current.host.remove()
     }
   }
 
   const scheduleIdleRelease = () => {
-    if (idleMs <= 0 || disposed || pending > 0) return
+    if (idleMs <= 0 || disposed || running || queue.length > 0) return
     clearIdleTimer()
     idleTimer = setTimeout(() => {
       idleTimer = null
-      if (pending === 0) releaseBundle()
+      if (!running && queue.length === 0) releaseBundle()
     }, idleMs)
   }
 
-  async function run(options: ThumbnailRenderOptions): Promise<RenderedImage> {
-    if (disposed) throw new Error('ThumbnailRenderer is disposed')
-    options.signal?.throwIfAborted?.()
+  const settle = (item: QueueItem, fn: () => void) => {
+    if (item.settled) return
+    item.settled = true
+    item.cleanup()
+    fn()
+  }
 
+  /** 任务是否仍然有效：未销毁、未取消、引擎仍是启动时的那个 */
+  const assertActive = (item: QueueItem, expected: EngineBundle) => {
+    if (disposed || bundle !== expected) throw createDisposedError()
+    if (item.settled) throw createAbortError(item.options.signal)
+    item.options.signal?.throwIfAborted?.()
+  }
+
+  async function run(item: QueueItem): Promise<RenderedImage> {
+    const options = item.options
     const format: ImageFormat = options.format ?? 'png'
     const width = options.width ?? defaultWidth
     const height = options.height ?? (options.width ? options.width : defaultHeight)
@@ -122,12 +158,14 @@ export function createThumbnailRenderer(
       fileName: options.fileName,
       signal: options.signal
     })
+    if (disposed) throw createDisposedError()
+    if (item.settled) throw createAbortError(options.signal)
     options.signal?.throwIfAborted?.()
-    if (disposed) throw new Error('ThumbnailRenderer is disposed')
 
     clearIdleTimer()
     if (!bundle) bundle = createBundle(width, height)
-    const { engine, host } = bundle
+    const current = bundle
+    const { engine, host } = current
 
     host.style.width = `${width}px`
     host.style.height = `${height}px`
@@ -135,17 +173,19 @@ export function createThumbnailRenderer(
 
     try {
       await engine.loadFromFile(file)
-      options.signal?.throwIfAborted?.()
+      // dispose 会让引擎作废在途的加载并丢弃迟到的结果，这里确保不会继续使用已销毁的引擎
+      assertActive(item, current)
 
       if (options.background !== undefined) {
         engine.setBackground(options.background)
       }
       if (options.panorama) {
         await engine.setPanorama(options.panorama, { hideGrid: !options.showGrid })
+        assertActive(item, current)
       }
       applyEngineOptions(engine, options, format)
 
-      return await renderOne(
+      const image = await renderOne(
         engine,
         options,
         file,
@@ -154,42 +194,77 @@ export function createThumbnailRenderer(
         height,
         format
       )
+      assertActive(item, current)
+      return image
     } finally {
-      // 复用引擎的清理：引擎 loadFromFile 会提前把 state.projectionMode 改回
-      // perspective，但相机并不切回，所以这里必须在 state 仍为 orthographic
-      // 时主动复位，否则下一张图会沿用正交相机。
-      try {
-        engine.toggleProjectionMode('perspective')
-        engine.clearPanorama()
-        engine.setBackground(options.background ?? defaultBackground(format))
-      } catch {
-        // 复位失败说明引擎状态不可信，丢弃它，下次出图重建
-        releaseBundle()
+      // 只复位仍然有效的引擎；被销毁 / 替换的引擎已经释放，不能再碰。
+      // 引擎 loadFromFile 会提前把 state.projectionMode 改回 perspective，但相机并不切回，
+      // 所以必须在 state 仍为 orthographic 时主动复位，否则下一张图会沿用正交相机。
+      if (!disposed && bundle === current) {
+        try {
+          engine.toggleProjectionMode('perspective')
+          engine.clearPanorama()
+          engine.setBackground(options.background ?? defaultBackground(format))
+        } catch {
+          // 复位失败说明引擎状态不可信，丢弃它，下次出图重建
+          releaseBundle()
+        }
       }
     }
   }
 
+  const pump = () => {
+    if (running || disposed) return
+    const item = queue.shift()
+    if (!item) {
+      scheduleIdleRelease()
+      return
+    }
+    running = item
+    run(item).then(
+      (image) => settle(item, () => item.resolve(image)),
+      (error) => settle(item, () => item.reject(error))
+    ).finally(() => {
+      running = null
+      pump()
+    })
+  }
+
   return {
     render(options) {
-      if (disposed) return Promise.reject(new Error('ThumbnailRenderer is disposed'))
-      pending += 1
-      const task = tail.then(
-        () => run(options),
-        () => run(options)
-      )
-      const settled = task.then(
-        () => undefined,
-        () => undefined
-      )
-      tail = settled
-      void settled.then(() => {
-        pending -= 1
-        scheduleIdleRelease()
+      if (disposed) return Promise.reject(createDisposedError())
+      const signal = options.signal
+      if (signal?.aborted) return Promise.reject(createAbortError(signal))
+
+      return new Promise<RenderedImage>((resolve, reject) => {
+        const item: QueueItem = {
+          options,
+          resolve,
+          reject,
+          settled: false,
+          cleanup: () => signal?.removeEventListener('abort', onAbort)
+        }
+        // 取消立即生效：排队中的任务直接移出队列，运行中的任务立即拒绝调用方，
+        // 后台工作在下一个检查点终止（assertActive 会看到 item.settled）
+        function onAbort() {
+          const index = queue.indexOf(item)
+          if (index >= 0) queue.splice(index, 1)
+          settle(item, () => reject(createAbortError(signal)))
+        }
+        signal?.addEventListener('abort', onAbort, { once: true })
+        queue.push(item)
+        clearIdleTimer()
+        pump()
       })
-      return task
     },
     dispose() {
-      disposed = true
+      if (!disposed) {
+        disposed = true
+        const error = createDisposedError()
+        const pendingItems = [...queue, ...(running ? [running] : [])]
+        queue.length = 0
+        for (const item of pendingItems) settle(item, () => item.reject(error))
+      }
       releaseBundle()
     }
   }

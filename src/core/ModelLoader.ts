@@ -292,6 +292,12 @@ export class ModelLoader {
   private async loadFromZip(file: File, onProgress?: ProgressCallback): Promise<LoadResult> {
     onProgress?.(5)
     const pack = await createAssetPackFromZip(file)
+    // ZIP 本身启用不代表包内入口格式也启用：入口走的是同一批加载器，必须同样受限。
+    // 在登记 activePack / 生成 blob URL 之前拒绝，并立即释放资源包。
+    if (!isExtensionEnabled(pack.entryExt)) {
+      pack.dispose()
+      throw new Error(`Unsupported model format: ${pack.entryPath}`)
+    }
     this.activePack = pack
 
     const entry = pack.files.get(pack.entryPath)
@@ -425,6 +431,11 @@ export class ModelLoader {
     onProgress?: ProgressCallback,
     displayName?: string
   ): Promise<LoadResult> {
+    // 公开方法，宿主可能绕过 loadFromFile 直接调用，这里再卡一次启用列表。
+    ext = ext.toLowerCase()
+    if (!isExtensionEnabled(ext)) {
+      throw new Error(`Unsupported model format: ${displayName || url}`)
+    }
     const manager = this.manager
     manager.onProgress = (_url, loaded, total) => {
       if (total > 0) onProgress?.((loaded / total) * 100)
