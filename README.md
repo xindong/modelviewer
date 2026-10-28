@@ -251,6 +251,21 @@ worker 最多保留一个 GPU 设备与渲染目标；设备选择一致且像�
 预览结果使用 `PreviewTimings`，不要求旧处理器的 `executionMs`；各阶段未执行时可能为 `null`。
 `queueMs`、`workerMs`、`totalMs` 均为毫秒且可能覆盖其他阶段，不应直接相加。
 
+### 可选的原生依赖
+
+只使用浏览器 SDK 时不会加载任何 Node 依赖。Node CLI / API 里的这些包声明在
+`optionalDependencies`，安装失败或使用 `npm install --omit=optional` 时不会让安装失败：
+
+| 包 | 用途 | 缺失时 |
+|----|------|--------|
+| `@napi-rs/canvas` | 纹理解码、渲染时的位图转换 | `OPTIONAL_DEPENDENCY_MISSING`（`error.dependency` 指明包名，提示如何安装） |
+| `fbx2gltf` | 原生 FBX 转换 | `FBX_BINARY_MISSING` |
+| `webgpu` | 无头 GPU 渲染 | 对应的渲染功能不可用 |
+| `occt-import-js` | 实验性 STEP | 对应的 STEP 功能不可用 |
+
+`sharp` **不是**可选依赖：它是 `@gltf-transform/functions` → `ndarray-pixels` 的硬依赖（其 Node
+构建在加载时就导入它），所以总会被安装、Node 工具链总需要它。
+
 ### 原生 FBX 转换与运行环境
 
 Node 的 FBX 默认使用依赖内的 FBX2glTF，不需要全局安装转换器。
@@ -492,6 +507,25 @@ setEnabledFormats(['glb', 'gltf', 'obj', 'fbx', 'stl', 'ply', 'dae', '3mf', '3ds
 // draco_decoder.wasm / draco_wasm_wrapper.js 的目录（可从
 // three/examples/jsm/libs/draco/gltf/ 拷贝），末尾的 / 会自动补齐。
 setDracoDecoderPath('/vendor/draco/')
+```
+
+**宿主无法用 HTTP(S) 暴露目录时**（例如 Electron 从 `file://` 加载页面，页面不能 `fetch` 本地文件），
+改用按文件名映射：把解码器打进自己的包，运行时转成 `blob:` URL 交给 SDK。
+`draco_wasm_wrapper.js` 与 `draco_decoder.wasm` 必须同时提供且来自同一版本；设置后优先于
+`setDracoDecoderPath`，传 `null` 恢复目录模式。已完成过一次解码的 DRACOLoader 会缓存解码器，
+请在首次加载 Draco 压缩的模型之前设置。
+
+```ts
+import { setDracoDecoderFiles } from 'mivo-model-viewer/core'
+
+const toBlobUrl = async (url: string, type: string) =>
+  URL.createObjectURL(new Blob([await (await fetch(url)).arrayBuffer()], { type }))
+
+setDracoDecoderFiles({
+  'draco_wasm_wrapper.js': await toBlobUrl(wrapperUrl, 'text/javascript'),
+  'draco_decoder.wasm': await toBlobUrl(wasmUrl, 'application/wasm')
+  // 'draco_decoder.js': 无 wasm 环境的回退，可省略
+})
 ```
 
 ### 4. 720° 全景作为 3D 场景
