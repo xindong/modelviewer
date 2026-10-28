@@ -1,0 +1,31 @@
+<!doctype html><html><body><!-- 大模型 + 大 padding 不能被远裁剪面裁空：window.run() 返回各组合的不透明像素占比，perspective 下 edge2000_pad4 必须 > 0，且与 edge2_pad4 几乎相同（取景与尺度无关） --><script type="module">
+import { createThumbnailRenderer } from '/src/core/index.ts'
+function cubeGltf(edge) {
+  const h = edge / 2
+  const v = [[-h,-h,h],[h,-h,h],[h,h,h],[-h,h,h],[-h,-h,-h],[h,-h,-h],[h,h,-h],[-h,h,-h]]
+  const idx = [0,1,2,0,2,3, 1,5,6,1,6,2, 5,4,7,5,7,6, 4,0,3,4,3,7, 3,2,6,3,6,7, 4,5,1,4,1,0]
+  const pos = new Float32Array(v.flat()); const ind = new Uint16Array(idx)
+  const buf = new Uint8Array(pos.byteLength + ind.byteLength); buf.set(new Uint8Array(pos.buffer), 0); buf.set(new Uint8Array(ind.buffer), pos.byteLength)
+  let s = ''; for (const b of buf) s += String.fromCharCode(b)
+  return JSON.stringify({ asset:{version:'2.0'}, scene:0, scenes:[{nodes:[0]}], nodes:[{mesh:0}],
+    meshes:[{primitives:[{attributes:{POSITION:0}, indices:1}]}],
+    buffers:[{byteLength:buf.byteLength, uri:'data:application/octet-stream;base64,'+btoa(s)}],
+    bufferViews:[{buffer:0,byteOffset:0,byteLength:pos.byteLength,target:34962},{buffer:0,byteOffset:pos.byteLength,byteLength:ind.byteLength,target:34963}],
+    accessors:[{bufferView:0,componentType:5126,count:8,type:'VEC3',min:[-h,-h,-h],max:[h,h,h]},{bufferView:1,componentType:5123,count:36,type:'SCALAR'}] })
+}
+async function opaque(blob) {
+  const bmp = await createImageBitmap(blob); const c = new OffscreenCanvas(bmp.width,bmp.height); const g = c.getContext('2d'); g.drawImage(bmp,0,0)
+  const d = g.getImageData(0,0,bmp.width,bmp.height).data; let n=0; for (let i=3;i<d.length;i+=4) if (d[i]>8) n++
+  return +(n/(bmp.width*bmp.height)).toFixed(3)
+}
+window.run = async () => {
+  const r = createThumbnailRenderer({ idleMs: 0, width: 256, height: 256 })
+  const out = {}
+  for (const [edge, padding, projection] of [[2000,undefined,'perspective'],[2000,4,'perspective'],[2000,4,'orthographic'],[2,4,'perspective'],[2,1.25,'perspective']]) {
+    const model = new Blob([cubeGltf(edge)], { type: 'model/gltf+json' })
+    try { out[`edge${edge}_pad${padding}_${projection}`] = await opaque((await r.render({ model, fileName: 'big.gltf', padding, projection })).blob) }
+    catch (e) { out[`edge${edge}_pad${padding}_${projection}`] = 'ERR ' + e.message }
+  }
+  r.dispose(); return out
+}
+</script></body></html>

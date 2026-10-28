@@ -395,7 +395,20 @@ export class ViewerEngine {
    */
   refitModel(padding: number, options: { animate?: boolean } = {}): FocusPose | null {
     if (!this.modelRoot) return null
-    return this.focusObject(this.modelRoot, { padding, animate: options.animate ?? false })
+    const pose = this.focusObject(this.modelRoot, { padding, animate: options.animate ?? false })
+    if (pose) this.fitClippingPlanes(pose)
+    return pose
+  }
+
+  /**
+   * 留白会把相机移远（最大 4 倍包围球距离），固定的远裁剪面会把大模型整个裁掉、出图变空白。
+   * 这里让远裁剪面至少覆盖「相机距离 + 包围球半径」并留 50% 余量；不低于默认值，
+   * 所以每次重新取景都会把上一次放大的裁剪面复位。
+   */
+  private fitClippingPlanes(pose: FocusPose) {
+    const reach = (pose.distance + pose.radius) * 1.5
+    this.perspectiveCamera.far = Math.max(CAMERA_CONFIG.FAR_CLIP, reach)
+    this.perspectiveCamera.updateProjectionMatrix()
   }
 
   /**
