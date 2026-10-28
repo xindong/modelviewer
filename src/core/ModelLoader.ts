@@ -194,6 +194,57 @@ export function getDracoDecoderPath(): string {
   return dracoDecoderPath
 }
 
+/** Draco 解码器目录里 DRACOLoader 会请求的文件名。 */
+export type DracoDecoderFileName = 'draco_wasm_wrapper.js' | 'draco_decoder.wasm' | 'draco_decoder.js'
+
+/** 文件名 → 实际 URL。`draco_decoder.js`（无 wasm 时的回退）可省略。 */
+export type DracoDecoderFiles = Partial<Record<DracoDecoderFileName, string>>
+
+let dracoDecoderFiles: DracoDecoderFiles | null = null
+
+/**
+ * 按文件名指定 Draco 解码器文件的 URL，优先于 {@link setDracoDecoderPath}。
+ *
+ * 目录式的 `setDracoDecoderPath` 要求宿主能用 HTTP(S) 暴露一个目录。有些宿主做不到
+ * （例如 Electron 从 `file://` 加载页面，页面不能 fetch 本地文件），但可以把解码器
+ * 打进自己的包，运行时转成 `blob:` URL 交给这里。
+ *
+ * `draco_wasm_wrapper.js` 与 `draco_decoder.wasm` 必须同时提供，并来自同一版本；
+ * 传 `null` 恢复目录模式。已经完成过一次解码的 DRACOLoader 会缓存解码器，请在首次
+ * 加载 Draco 压缩的模型之前设置。
+ */
+export function setDracoDecoderFiles(files: DracoDecoderFiles | null): void {
+  if (files === null) {
+    dracoDecoderFiles = null
+    return
+  }
+  for (const required of ['draco_wasm_wrapper.js', 'draco_decoder.wasm'] as const) {
+    const value = files[required]
+    if (typeof value !== 'string' || !value) {
+      throw new Error(`setDracoDecoderFiles: "${required}" is required`)
+    }
+  }
+  const next: DracoDecoderFiles = {}
+  for (const name of ['draco_wasm_wrapper.js', 'draco_decoder.wasm', 'draco_decoder.js'] as const) {
+    const value = files[name]
+    if (typeof value === 'string' && value) next[name] = value
+  }
+  dracoDecoderFiles = next
+}
+
+export function getDracoDecoderFiles(): DracoDecoderFiles | null {
+  return dracoDecoderFiles ? { ...dracoDecoderFiles } : null
+}
+
+/** DRACOLoader 请求的 URL → 按文件名映射后的 URL；未设置映射或不是解码器文件时原样返回。 */
+function resolveDracoUrl(url: string): string {
+  const files = dracoDecoderFiles
+  if (!files) return url
+  const base = url.split(/[?#]/, 1)[0]?.split('/').pop() ?? ''
+  const mapped = (files as Record<string, string | undefined>)[base]
+  return mapped ?? url
+}
+
 export class ModelLoader {
   private draco: DRACOLoader | null = null
   private manager = new THREE.LoadingManager()
@@ -202,7 +253,10 @@ export class ModelLoader {
   private loadOptions: ModelLoadOptions = {}
 
   constructor() {
-    this.draco = new DRACOLoader()
+    // 专属 manager：只给 DRACOLoader 用，URL 改写（setDracoDecoderFiles）不会波及其它加载
+    const dracoManager = new THREE.LoadingManager()
+    dracoManager.setURLModifier(resolveDracoUrl)
+    this.draco = new DRACOLoader(dracoManager)
     this.draco.setDecoderPath(dracoDecoderPath)
   }
 

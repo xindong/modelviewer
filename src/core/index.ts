@@ -18,9 +18,17 @@ export {
   setEnabledFormats,
   getEnabledFormats,
   setDracoDecoderPath,
-  getDracoDecoderPath
+  getDracoDecoderPath,
+  setDracoDecoderFiles,
+  getDracoDecoderFiles
 } from './ModelLoader'
-export type { LoadResult, ProgressCallback, ModelLoadOptions } from './ModelLoader'
+export type {
+  LoadResult,
+  ProgressCallback,
+  ModelLoadOptions,
+  DracoDecoderFiles,
+  DracoDecoderFileName
+} from './ModelLoader'
 export {
   loadVrmlFromBuffer,
   loadStepFromBuffer,

@@ -1,5 +1,6 @@
 import { sdkImport } from './dependencies.mjs';
 const { default: sharp } = await sdkImport('sharp');
+import { importOptional } from '../optional.mjs';
 import { createRenderer } from './gpu.mjs';
 import { unpremultiplySRGB } from '../pixels.mjs';
 import { loadThreeScene, parseGLBForRender } from './load.mjs';
@@ -175,7 +176,7 @@ async function decodeTexture(texture, T) {
     ({ data: rgba, width, height } = image);
     if (rgba.length !== width * height * 4) throw new Error('Expected RGBA image.');
   } else {
-    const { createCanvas } = await sdkImport('@napi-rs/canvas');
+    const { createCanvas } = await importOptional('@napi-rs/canvas', 'Texture decoding (render)', sdkImport);
     const canvas = createCanvas(image.width, image.height);
     const ctx = canvas.getContext('2d');
     ctx.drawImage(image, 0, 0);

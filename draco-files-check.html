@@ -1,0 +1,53 @@
+<!doctype html>
+<!--
+  Manual / automated check for setDracoDecoderFiles (self-hosted Draco decoder).
+
+  Needs a Draco-compressed GLB at public/draco-sample.glb (git-ignored). Generate it with:
+    node scripts/make-draco-sample.mjs
+
+  Query: ?mode=control  → no override (a blocked CDN must make Draco loading fail)
+         ?mode=files    → decoder files supplied as blob: URLs (must load without any CDN request)
+  Result is exposed as window.run().
+-->
+<html><body><script type="module">
+import wrapperSrc from 'three/examples/jsm/libs/draco/gltf/draco_wasm_wrapper.js?url'
+import wasmSrc from 'three/examples/jsm/libs/draco/gltf/draco_decoder.wasm?url'
+import { setDracoDecoderFiles, setDracoDecoderPath, getDracoDecoderFiles, createThumbnailRenderer } from '/src/core/index.ts'
+import { ModelLoader } from '/src/core/index.ts'
+
+const mode = new URLSearchParams(location.search).get('mode') || 'files'
+const toBlobUrl = async (src, type) => URL.createObjectURL(new Blob([await (await fetch(src)).arrayBuffer()], { type }))
+
+window.run = async () => {
+  const out = { mode }
+  const model = await (await fetch('/draco-sample.glb')).blob()
+  if (mode === 'files') {
+    // validation
+    out.missingWasm = (() => { try { setDracoDecoderFiles({ 'draco_wasm_wrapper.js': 'x' }); return 'accepted' } catch (e) { return e.message } })()
+    out.missingWrapper = (() => { try { setDracoDecoderFiles({ 'draco_decoder.wasm': 'x' }); return 'accepted' } catch (e) { return e.message } })()
+    out.stateAfterRejected = getDracoDecoderFiles()
+    // an unusable directory path must be ignored once files are set
+    setDracoDecoderPath('https://invalid.example/draco/')
+    setDracoDecoderFiles({
+      'draco_wasm_wrapper.js': await toBlobUrl(wrapperSrc, 'text/javascript'),
+      'draco_decoder.wasm': await toBlobUrl(wasmSrc, 'application/wasm'),
+    })
+    out.files = Object.keys(getDracoDecoderFiles())
+  }
+  const loader = new ModelLoader()
+  try {
+    const file = new File([model], 'draco-sample.glb')
+    const res = await loader.loadFromFile(file)
+    let tris = 0
+    res.object.traverse((o) => { if (o.isMesh) tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3 })
+    out.load = { ok: true, tris }
+  } catch (e) { out.load = { ok: false, error: String(e.message).slice(0, 160) } }
+  loader.dispose()
+  // the thumbnail renderer goes through the same loader
+  const r = createThumbnailRenderer({ idleMs: 0, width: 256 })
+  out.thumb = await r.render({ model, fileName: 'draco-sample.glb' }).then((i) => ({ ok: true, mime: i.mime }), (e) => ({ ok: false, error: String(e.message).slice(0, 120) }))
+  r.dispose()
+  return out
+}
+window.__ready = true
+</script></body></html>

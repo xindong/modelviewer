@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { diagnostic, limitsFor, resourceError } from './resources.mjs';
+import { importOptional } from './optional.mjs';
 
 const ADAPTER = Symbol('node-model-adapter');
 let activeAdapter = null;
@@ -29,7 +30,7 @@ class NodeFileReader {
 export async function installNodeAdapters({ resolver, warnings = [], options = {}, context = {} } = {}) {
   if (activeAdapter) throw resourceError('ADAPTER_ALREADY_ACTIVE', 'Node model adapters require serialized use within an isolated process.');
   const [{ createCanvas, loadImage, ImageData, Image, CanvasElement }, { default: sharp }, { DOMParser }] = await Promise.all([
-    import('@napi-rs/canvas'), import('sharp'), import('linkedom'),
+    importOptional('@napi-rs/canvas', 'Texture decoding'), import('sharp'), import('linkedom'),
   ]);
   // Recheck after asynchronous imports, before installing any process-local shims.
   if (activeAdapter) throw resourceError('ADAPTER_ALREADY_ACTIVE', 'Node adapters are already installed.');

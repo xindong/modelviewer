@@ -29,6 +29,8 @@ export {
   getEnabledFormats,
   setDracoDecoderPath,
   getDracoDecoderPath,
+  setDracoDecoderFiles,
+  getDracoDecoderFiles,
   CAMERA_CONFIG,
   countTriangles,
   disposeObject3D,
@@ -61,6 +63,8 @@ export {
 export type {
   ViewerState,
   ViewerEngineOptions,
+  DracoDecoderFiles,
+  DracoDecoderFileName,
   LoadResult,
   ProgressCallback,
   AssetPack,
