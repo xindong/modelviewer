@@ -406,6 +406,8 @@ class ModelViewer implements ModelViewerInstance {
     if (theme.primary) s.setProperty('--mv-primary', theme.primary)
     if (theme.text) s.setProperty('--mv-text', theme.text)
     if (theme.panelBg) s.setProperty('--mv-panel-bg', theme.panelBg)
+    if (theme.controlBg) s.setProperty('--mv-control-bg', theme.controlBg)
+    if (theme.border) s.setProperty('--mv-border', theme.border)
     if (theme.background) s.setProperty('--mv-bg', theme.background)
   }
 

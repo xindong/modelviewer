@@ -1,0 +1,37 @@
+<!doctype html>
+<!--
+  Layout / theme check for the default UI. Mounts the viewer into a fixed-size container
+  and reports how tall the side panels need to be versus the space they get.
+  Query: ?w=1091&h=631&theme=<json>   (theme is passed to createModelViewer)
+  Needs public/BoxAnimated.glb (git-ignored): any GLB works, drop it in as public/layout-sample.glb.
+-->
+<html><body style="margin:0;background:#303030"><div id="v" style="position:relative"></div>
+<script type="module">
+import { createModelViewer } from '/src/index.ts'
+const q = new URLSearchParams(location.search)
+const w = Number(q.get('w') || 1091), h = Number(q.get('h') || 631)
+const theme = q.get('theme') ? JSON.parse(q.get('theme')) : undefined
+// ?tokens=1 simulates a host design-token set (names as in a lightbox toolbar family)
+if (q.get('tokens')) {
+  const st = document.createElement('style')
+  st.textContent = ':root{--tok-bg:rgba(0,0,0,.6);--tok-border:rgba(255,255,255,.2);--tok-fg:rgba(255,255,255,.8);--tok-fg-strong:#fff}'
+  document.head.appendChild(st)
+}
+const host = document.getElementById('v')
+host.style.cssText = `width:${w}px;height:${h}px;position:relative`
+window.run = async () => {
+  const v = createModelViewer(host, { locale: 'zh-CN', theme, ui: { import: false, export: false, panorama: false, emptyHint: false } })
+  await v.load(await (await fetch('/layout-sample.glb')).blob(), { fileName: 'layout-sample.glb' })
+  await new Promise(r => setTimeout(r, 700))
+  const side = (name) => {
+    const sb = host.querySelector(`.mv-sidebar-${name}`), shell = sb?.querySelector('.mv-sidebar-shell')
+    if (!sb || !shell) return null
+    const r = sb.getBoundingClientRect(), hr = host.getBoundingClientRect()
+    return { top: Math.round(r.top - hr.top), height: Math.round(r.height), bottomGap: Math.round(hr.bottom - r.bottom),
+      content: shell.scrollHeight, visible: shell.clientHeight, scrolls: shell.scrollHeight > shell.clientHeight + 1 }
+  }
+  const sections = [...host.querySelectorAll('.mv-sidebar-right .mv-section')].map(s => ({ cls: s.className.replace('mv-section','').trim() || 'section', h: Math.round(s.getBoundingClientRect().height) }))
+  return { size: [w, h], left: side('left'), right: side('right'), sections }
+}
+window.__ready = true
+</script></body></html>
