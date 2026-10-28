@@ -389,7 +389,14 @@
 
 /* Light dial — original art */
 .mv-root .mv-light-dial {
+  /* Distance between the white disc and the rotating ring that carries the sun handle.
+     The handle is placed from it (see .mv-shader-round::after), so resizing the dial only
+     means updating this value. */
+  --mv-dial-gap: 8px;
   position: relative;
+  /* The handle now sits clear of the disc, i.e. above the ring's box; keep the label above it
+     clear (14 = 20px reach - 6px). */
+  margin-top: calc(14px - var(--mv-dial-gap));
   height: 99px;
   display: flex;
   align-items: center;
@@ -450,7 +457,11 @@
 .mv-root .mv-shader-round::after {
   content: '';
   position: absolute;
-  top: -6px;
+  /* `top` is measured from the padding box, i.e. inside the ring's 8px transparent border.
+     Bottom edge 4px outside the disc: gap - 8px (border) - 16px (handle) - 4px. The old fixed
+     -6px put the handle's centre only 2px above the rim (so it straddled it, looking sunk
+     in) and sank further once the dial was scaled down. */
+  top: calc(var(--mv-dial-gap) - 28px);
   left: 50%;
   transform: translateX(-50%);
   width: 16px;
@@ -951,6 +962,7 @@
     height: 26px;
   }
   .mv-root .mv-light-dial {
+    --mv-dial-gap: 7px;
     height: 88px;
   }
   .mv-root .mv-dial-outer {
@@ -991,6 +1003,7 @@
     height: 22px;
   }
   .mv-root .mv-light-dial {
+    --mv-dial-gap: 7px;
     height: 76px;
   }
   .mv-root .mv-dial-outer {
@@ -1026,6 +1039,7 @@
     height: 20px;
   }
   .mv-root .mv-light-dial {
+    --mv-dial-gap: 5px;
     height: 56px;
   }
   .mv-root .mv-dial-outer {
@@ -1044,8 +1058,11 @@
   .mv-root .mv-input-number {
     height: 28px;
   }
+  .mv-root .mv-field {
+    gap: 4px;
+  }
   .mv-root .mv-panorama-slot {
-    height: 30px;
+    height: 28px;
   }
   .mv-root .mv-panorama-empty img {
     width: 18px;
