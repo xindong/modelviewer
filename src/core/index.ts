@@ -9,7 +9,17 @@ export type {
   ViewerCaptureFrameOptions,
   ViewerFocusOptions
 } from './ViewerEngine'
-export { ModelLoader, isSupportedModelFile, isExperimentalModelFile, SUPPORTED_ACCEPT } from './ModelLoader'
+export {
+  ModelLoader,
+  isSupportedModelFile,
+  isExperimentalModelFile,
+  SUPPORTED_ACCEPT,
+  getSupportedAccept,
+  setEnabledFormats,
+  getEnabledFormats,
+  setDracoDecoderPath,
+  getDracoDecoderPath
+} from './ModelLoader'
 export type { LoadResult, ProgressCallback, ModelLoadOptions } from './ModelLoader'
 export {
   loadVrmlFromBuffer,
@@ -55,6 +65,12 @@ export type {
   RenderedImage,
   ResolveModelInputOptions
 } from './renderModelImage'
+export { createThumbnailRenderer } from './thumbnailRenderer'
+export type {
+  ThumbnailRenderer,
+  ThumbnailRendererOptions,
+  ThumbnailRenderOptions
+} from './thumbnailRenderer'
 export {
   resolveModelFileName,
   sniffBlobExtension,

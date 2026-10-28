@@ -38,7 +38,7 @@ export interface LoadResult {
   experimental?: boolean
 }
 
-const MODEL_EXTENSIONS = [
+const MODEL_EXTENSIONS: readonly string[] = [
   'glb',
   'gltf',
   'obj',
@@ -53,15 +53,58 @@ const MODEL_EXTENSIONS = [
   ...STEP_EXTENSIONS
 ]
 
+/** 当前启用的扩展名（小写、无点）。null = 全部启用（默认，向后兼容）。 */
+let enabledExtensions: ReadonlySet<string> | null = null
+
+/**
+ * 限定本进程内可加载的格式。传扩展名数组（如 `['glb','gltf','fbx']`，大小写、
+ * 前导点均可），不在列表内的格式会被 `isSupportedModelFile` 判为不支持，
+ * `ModelLoader.loadFromFile` 也会拒绝加载；传 `null` 恢复全部格式。
+ *
+ * 全局生效，请在创建查看器 / 渲染器之前调用。未识别的扩展名会被忽略。
+ */
+export function setEnabledFormats(exts: readonly string[] | null): void {
+  if (exts === null) {
+    enabledExtensions = null
+    return
+  }
+  const known = new Set(MODEL_EXTENSIONS)
+  const next = new Set<string>()
+  for (const raw of exts) {
+    const ext = raw.trim().replace(/^\./, '').toLowerCase()
+    if (known.has(ext)) next.add(ext)
+  }
+  enabledExtensions = next
+}
+
+/** 当前启用的扩展名列表（无点、小写）。 */
+export function getEnabledFormats(): string[] {
+  return MODEL_EXTENSIONS.filter((ext) => isExtensionEnabled(ext))
+}
+
+function isExtensionEnabled(ext: string): boolean {
+  if (!MODEL_EXTENSIONS.includes(ext)) return false
+  return enabledExtensions === null || enabledExtensions.has(ext)
+}
+
+const BASE_ACCEPT_EXTENSIONS = ['glb', 'gltf', 'obj', 'fbx', 'stl', 'ply', 'dae', '3mf', '3ds', 'zip']
+
+/** 默认（全部格式）的 `<input accept>`；受 `setEnabledFormats` 影响请用 {@link getSupportedAccept}。 */
 export const SUPPORTED_ACCEPT = [
-  '.glb,.gltf,.obj,.fbx,.stl,.ply,.dae,.3mf,.3ds,.zip',
+  BASE_ACCEPT_EXTENSIONS.map((e) => `.${e}`).join(','),
   VRML_ACCEPT,
   STEP_ACCEPT
 ].join(',')
 
+/** 按当前启用格式生成 `<input accept>`。 */
+export function getSupportedAccept(): string {
+  if (enabledExtensions === null) return SUPPORTED_ACCEPT
+  return getEnabledFormats().map((e) => `.${e}`).join(',')
+}
+
 export function isSupportedModelFile(file: File): boolean {
   const ext = file.name.split('.').pop()?.toLowerCase() || ''
-  return MODEL_EXTENSIONS.includes(ext)
+  return isExtensionEnabled(ext)
 }
 
 export function isExperimentalModelFile(file: File): boolean {
@@ -129,6 +172,28 @@ export interface ModelLoadOptions {
   shadows?: boolean
 }
 
+const DEFAULT_DRACO_DECODER_PATH = 'https://www.gstatic.com/draco/versioned/decoders/1.5.7/'
+let dracoDecoderPath = DEFAULT_DRACO_DECODER_PATH
+
+/**
+ * 自托管 Draco 解码器目录（需包含 draco_decoder.js / draco_decoder.wasm /
+ * draco_wasm_wrapper.js，可从 `three/examples/jsm/libs/draco/gltf/` 拷贝）。
+ * 默认走 gstatic CDN；严格 CSP / 离线环境请在加载模型前设置。
+ * 路径末尾的 `/` 会自动补齐；传空串恢复默认值。
+ */
+export function setDracoDecoderPath(url: string): void {
+  const trimmed = url.trim()
+  if (!trimmed) {
+    dracoDecoderPath = DEFAULT_DRACO_DECODER_PATH
+    return
+  }
+  dracoDecoderPath = trimmed.endsWith('/') ? trimmed : `${trimmed}/`
+}
+
+export function getDracoDecoderPath(): string {
+  return dracoDecoderPath
+}
+
 export class ModelLoader {
   private draco: DRACOLoader | null = null
   private manager = new THREE.LoadingManager()
@@ -138,9 +203,7 @@ export class ModelLoader {
 
   constructor() {
     this.draco = new DRACOLoader()
-    this.draco.setDecoderPath(
-      'https://www.gstatic.com/draco/versioned/decoders/1.5.7/'
-    )
+    this.draco.setDecoderPath(dracoDecoderPath)
   }
 
   private releasePack() {
@@ -156,8 +219,12 @@ export class ModelLoader {
     options: ModelLoadOptions = {}
   ): Promise<LoadResult> {
     const ext = file.name.split('.').pop()?.toLowerCase() || ''
+    if (!isExtensionEnabled(ext)) {
+      throw new Error(`Unsupported model format: ${file.name}`)
+    }
     this.loadOptions = options
     this.releasePack()
+    this.draco?.setDecoderPath(dracoDecoderPath)
 
     if (ext === 'zip') {
       return this.loadFromZip(file, onProgress)

@@ -78,11 +78,11 @@ export interface RenderedImage {
   fileName?: string
 }
 
-function formatMime(format: ImageFormat): string {
+export function formatMime(format: ImageFormat): string {
   return format === 'jpeg' ? 'image/jpeg' : format === 'webp' ? 'image/webp' : 'image/png'
 }
 
-function defaultBackground(format: ImageFormat): 'transparent' | string {
+export function defaultBackground(format: ImageFormat): 'transparent' | string {
   return format === 'jpeg' ? '#ffffff' : 'transparent'
 }
 
@@ -155,7 +155,7 @@ export async function resolveModelInput(
   return file
 }
 
-function applyEngineOptions(engine: ViewerEngine, options: RenderModelImageOptions, format: ImageFormat) {
+export function applyEngineOptions(engine: ViewerEngine, options: RenderModelImageOptions, format: ImageFormat) {
   if (options.projection) {
     engine.toggleProjectionMode(options.projection)
   }
@@ -178,7 +178,7 @@ function applyEngineOptions(engine: ViewerEngine, options: RenderModelImageOptio
   engine.setBackground(background)
 }
 
-async function renderOne(
+export async function renderOne(
   engine: ViewerEngine,
   options: RenderModelImageOptions,
   file: File,

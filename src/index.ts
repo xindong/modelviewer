@@ -24,6 +24,11 @@ export {
   isSupportedModelFile,
   isExperimentalModelFile,
   SUPPORTED_ACCEPT,
+  getSupportedAccept,
+  setEnabledFormats,
+  getEnabledFormats,
+  setDracoDecoderPath,
+  getDracoDecoderPath,
   CAMERA_CONFIG,
   countTriangles,
   disposeObject3D,
@@ -43,6 +48,7 @@ export {
   computeFocusPose,
   focusCameraOn,
   loadModelObject,
+  createThumbnailRenderer,
   renderModelImage,
   renderModelImageDetailed,
   renderModelImages,
@@ -82,5 +88,8 @@ export type {
   ModelInput,
   ImageFormat,
   RenderModelImageOptions,
+  ThumbnailRenderer,
+  ThumbnailRendererOptions,
+  ThumbnailRenderOptions,
   RenderedImage
 } from './core'

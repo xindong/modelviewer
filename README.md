@@ -449,6 +449,49 @@ const shots = await renderModelImages({
 
 返回值：`renderModelImage` → `Blob`；`renderModelImages` → `{ blob, width, height, format, view, fileName }[]`。
 
+### 批量缩略图：复用同一个 WebGL 上下文
+
+`renderModelImage` 每次调用都会新建并销毁一个 WebGL 上下文。聊天列表、资源库这类要连续出很多张图的场景，请改用 `createThumbnailRenderer`：整个生命周期内只持有一个引擎，任务自动排队串行执行。
+
+```ts
+import { createThumbnailRenderer } from 'mivo-model-viewer/core'
+
+const thumbs = createThumbnailRenderer({
+  width: 512,        // 默认出图尺寸，单次调用可覆盖
+  idleMs: 30_000     // 空闲 30s 后释放 WebGL 上下文，下次出图按需重建；0 = 不释放
+})
+
+// 可并发调用，内部按调用顺序串行
+const { blob } = await thumbs.render({ model: blobOrFileOrUrl, fileName: 'chair.fbx' })
+
+thumbs.dispose()     // 离开页面时释放；之后调用 render 会被拒绝
+```
+
+`render` 的选项与 `renderModelImage` 相同（尺寸、格式、背景、视角、投影、材质模式、灯光、全景、`signal` 等），区别是只出一张（不支持 `views`），返回带 `mime`、`width`、`height` 的 `RenderedImage`。每张图出完后会复位正交相机、全景和背景，上一张的参数不会影响下一张。
+
+### 限定格式与自托管 Draco 解码器
+
+宿主可能只想接收一部分格式（例如不接收 ZIP、实验性的 VRML / STEP），也可能处在严格 CSP 或离线环境。这两个设置是进程内全局的，请在创建查看器 / 渲染器之前调用：
+
+```ts
+import {
+  setEnabledFormats,
+  getEnabledFormats,
+  getSupportedAccept,
+  setDracoDecoderPath
+} from 'mivo-model-viewer/core'
+
+// 只启用这些格式（扩展名，大小写与前导点均可；未知扩展名会被忽略）。
+// 不在列表内的文件：isSupportedModelFile 返回 false，ModelLoader 拒绝加载，
+// 默认 UI 的导入按钮 accept 也同步收窄。传 null 恢复全部格式。
+setEnabledFormats(['glb', 'gltf', 'obj', 'fbx', 'stl', 'ply', 'dae', '3mf', '3ds'])
+
+// Draco 解码器默认走 gstatic CDN。自托管时指向包含 draco_decoder.js /
+// draco_decoder.wasm / draco_wasm_wrapper.js 的目录（可从
+// three/examples/jsm/libs/draco/gltf/ 拷贝），末尾的 / 会自动补齐。
+setDracoDecoderPath('/vendor/draco/')
+```
+
 ### 4. 720° 全景作为 3D 场景
 
 把一张 **2:1 的等距圆柱（equirectangular）全景图**当天空盒：模型站在庭院里，而不是浮在黑底上。

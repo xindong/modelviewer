@@ -1,0 +1,51 @@
+<!doctype html><html><body><script type="module">
+import { createThumbnailRenderer, setEnabledFormats } from '/src/core/index.ts'
+const canvases = () => document.querySelectorAll('canvas[data-engine],div[data-mivo-render] canvas').length
+async function stats(blob) {
+  const bmp = await createImageBitmap(blob)
+  const c = new OffscreenCanvas(bmp.width, bmp.height); const g = c.getContext('2d')
+  g.drawImage(bmp, 0, 0)
+  const d = g.getImageData(0, 0, bmp.width, bmp.height).data
+  let opaque = 0; for (let i = 3; i < d.length; i += 4) if (d[i] > 0) opaque++
+  return { w: bmp.width, h: bmp.height, opaqueRatio: +(opaque / (bmp.width * bmp.height)).toFixed(3) }
+}
+window.run = async () => {
+  const out = {}
+  const model = await (await fetch('/BoxAnimated.glb')).blob()
+  const r = createThumbnailRenderer({ idleMs: 300, width: 256 })
+  // 并发 3 张：不同尺寸、格式、投影、背景
+  const t0 = performance.now()
+  const ps = [
+    r.render({ model, fileName: 'a.glb' }),
+    r.render({ model, fileName: 'a.glb', width: 320, height: 200, format: 'webp', projection: 'orthographic', presetView: 'top' }),
+    r.render({ model, fileName: 'a.glb', format: 'jpeg', width: 128 })
+  ]
+  await new Promise(res => setTimeout(res, 50))
+  out.canvasesWhileRunning = canvases()
+  const imgs = await Promise.all(ps)
+  out.concurrent = await Promise.all(imgs.map(async i => ({ mime: i.mime, ...(await stats(i.blob)) })))
+  // 正交之后再出透视：确认相机已复位（与第一张同参数，结果应一致）
+  const again = await r.render({ model, fileName: 'a.glb' })
+  const first = await stats(imgs[0].blob), second = await stats(again.blob)
+  out.cameraReset = first.opaqueRatio === second.opaqueRatio
+  out.firstVsAgain = [first.opaqueRatio, second.opaqueRatio]
+  out.ms = Math.round(performance.now() - t0)
+  // 格式限制
+  setEnabledFormats(['glb'])
+  out.zipRejected = await r.render({ model, fileName: 'pack.zip' }).then(() => false, e => String(e.message))
+  out.glbStillOk = await r.render({ model, fileName: 'a.glb' }).then(() => true, e => String(e.message))
+  setEnabledFormats(null)
+  // 取消
+  const ac = new AbortController(); ac.abort()
+  out.aborted = await r.render({ model, fileName: 'a.glb', signal: ac.signal }).then(() => false, e => e.name || String(e))
+  // 空闲释放
+  await new Promise(res => setTimeout(res, 800))
+  out.canvasesAfterIdle = canvases()
+  out.rerenderAfterIdle = await r.render({ model, fileName: 'a.glb' }).then(() => true, e => String(e.message))
+  r.dispose()
+  out.canvasesAfterDispose = canvases()
+  out.afterDispose = await r.render({ model, fileName: 'a.glb' }).then(() => false, e => String(e.message))
+  return out
+}
+window.__ready = true
+</script></body></html>
