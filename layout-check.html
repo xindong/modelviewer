@@ -3,6 +3,7 @@
   Layout / theme check for the default UI. Mounts the viewer into a fixed-size container
   and reports how tall the side panels need to be versus the space they get.
   Query: ?w=1091&h=631&theme=<json>   (theme is passed to createModelViewer)
+         &nopano=1   hide the scene-background (panorama) control; it is ON by default, so check without this flag too
   Needs public/BoxAnimated.glb (git-ignored): any GLB works, drop it in as public/layout-sample.glb.
 -->
 <html><body style="margin:0;background:#303030"><div id="v" style="position:relative"></div>
@@ -20,7 +21,7 @@ if (q.get('tokens')) {
 const host = document.getElementById('v')
 host.style.cssText = `width:${w}px;height:${h}px;position:relative`
 window.run = async () => {
-  const v = createModelViewer(host, { locale: 'zh-CN', theme, ui: { import: false, export: false, panorama: false, emptyHint: false } })
+  const v = createModelViewer(host, { locale: 'zh-CN', theme, ui: { import: false, export: false, panorama: q.get('nopano') ? false : true, emptyHint: false } })
   await v.load(await (await fetch('/layout-sample.glb')).blob(), { fileName: 'layout-sample.glb' })
   await new Promise(r => setTimeout(r, 700))
   const side = (name) => {

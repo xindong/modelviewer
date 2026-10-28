@@ -2,19 +2,26 @@
   /* Theme variables. Every colour in the default UI derives from these, so a host can
      restyle the viewer by setting them (or through the `theme` option). The defaults
      reproduce the original look exactly. Colours that are white / primary with an alpha
-     are derived with color-mix, so any CSS colour (including var(...)) works here. */
-  --mv-primary: #745ef5;
-  --mv-text: #ffffff;
+     are derived with color-mix, so any CSS colour (including var(...)) works here.
+
+     Backward compatibility: before 0.8.2 hosts customised the viewer by overriding
+     --primary-color / --text-color-primary / --stroke02 / --primary-color-alpha on
+     .mv-root. Those names stay defined locally here (so a same-named variable in the host
+     page can never leak in, exactly as before) and the new variables read them, so such
+     overrides keep working. */
+  --primary-color: #745ef5;
+  --text-color-primary: #ffffff;
+  --mv-primary: var(--primary-color);
+  --mv-text: var(--text-color-primary);
   --mv-panel-bg: rgba(18, 18, 18, 0.92);
   --mv-control-bg: rgba(26, 26, 26, 1);
   --mv-border: rgba(255, 255, 255, 0.08);
   --mv-bg: linear-gradient(180deg, #1c1f1f 0%, #525252 100%);
+  --stroke02: color-mix(in srgb, var(--mv-text) 5%, transparent);
+  --primary-color-alpha: color-mix(in srgb, var(--mv-primary) 10%, transparent);
   /* Filter for the active / hovered two-tone icons. `none` keeps their built-in purple
      detail; the theme's `monochromeIcons` switches it to the same white as inactive icons. */
   --mv-icon-active-filter: none;
-  /* Legacy aliases, kept so hosts that override the old names keep working. */
-  --primary-color: var(--mv-primary);
-  --text-color-primary: var(--mv-text);
   --mv-fill: 10%;
 
   position: relative;
@@ -501,7 +508,7 @@
 }
 
 .mv-root .mv-native-slider:focus::-webkit-slider-thumb {
-  box-shadow: 0 0 0 5px color-mix(in srgb, var(--mv-primary) 10%, transparent);
+  box-shadow: 0 0 0 5px var(--primary-color-alpha);
 }
 
 .mv-root .mv-native-slider::-moz-range-track {
@@ -578,7 +585,7 @@
   padding: 5px 12px;
   background: var(--mv-control-bg);
   border-radius: 8px;
-  border: 1px solid color-mix(in srgb, var(--mv-text) 5%, transparent);
+  border: 1px solid var(--stroke02);
 }
 
 .mv-root .mv-texture-btn {
@@ -906,6 +913,12 @@
  * a lightbox / dialog may give the viewer. Tiers are keyed on the height of the viewer
  * itself (container query), so a roomy host keeps the default look.
  */
+@container mv (max-height: 780px) {
+  .mv-root .mv-panorama-slot {
+    height: 64px;
+  }
+}
+
 @container mv (max-height: 700px) {
   .mv-root .mv-sidebar {
     top: 16px;
@@ -956,6 +969,13 @@
   .mv-root .mv-input-number {
     height: 32px;
   }
+  .mv-root .mv-panorama-slot {
+    height: 52px;
+  }
+  .mv-root .mv-panorama-empty img {
+    width: 24px;
+    height: 24px;
+  }
 }
 
 @container mv (max-height: 600px) {
@@ -985,6 +1005,9 @@
     width: 76px;
     height: 76px;
   }
+  .mv-root .mv-panorama-slot {
+    height: 44px;
+  }
 }
 
 @container mv (max-height: 540px) {
@@ -1003,23 +1026,30 @@
     height: 20px;
   }
   .mv-root .mv-light-dial {
-    height: 64px;
+    height: 56px;
   }
   .mv-root .mv-dial-outer {
-    width: 52px;
-    height: 52px;
+    width: 46px;
+    height: 46px;
   }
   .mv-root .mv-dial-sphere {
-    width: 38px;
-    height: 38px;
+    width: 34px;
+    height: 34px;
   }
   .mv-root .mv-shader-round {
-    width: 64px;
-    height: 64px;
+    width: 56px;
+    height: 56px;
   }
   .mv-root .mv-slider-row,
   .mv-root .mv-input-number {
     height: 28px;
+  }
+  .mv-root .mv-panorama-slot {
+    height: 30px;
+  }
+  .mv-root .mv-panorama-empty img {
+    width: 18px;
+    height: 18px;
   }
 }
 
