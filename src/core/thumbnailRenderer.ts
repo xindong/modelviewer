@@ -1,6 +1,7 @@
 import { ViewerEngine } from './ViewerEngine'
 import {
   applyEngineOptions,
+  assertValidPadding,
   defaultBackground,
   renderOne,
   resolveModelInput,
@@ -23,6 +24,10 @@ export interface ThumbnailRendererOptions {
   height?: number
 }
 
+/**
+ * 与 `renderModelImage` 同一套选项（不含 `views`）。差别：缩略图默认机位是 `angled`（3/4 斜视角），
+ * 而不是 `front`——正对镜头的规则形体会退化成一块平面，看不出是 3D。需要正面时显式传 `presetView: 'front'`。
+ */
 export type ThumbnailRenderOptions = Omit<RenderModelImageOptions, 'views'>
 
 export interface ThumbnailRenderer {
@@ -189,7 +194,7 @@ export function createThumbnailRenderer(
         engine,
         options,
         file,
-        options.presetView ?? 'front',
+        options.presetView ?? 'angled',
         width,
         height,
         format
@@ -233,6 +238,11 @@ export function createThumbnailRenderer(
   return {
     render(options) {
       if (disposed) return Promise.reject(createDisposedError())
+      try {
+        assertValidPadding(options.padding)
+      } catch (error) {
+        return Promise.reject(error)
+      }
       const signal = options.signal
       if (signal?.aborted) return Promise.reject(createAbortError(signal))
 

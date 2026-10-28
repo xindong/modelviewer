@@ -45,8 +45,13 @@ export interface RenderModelImageOptions {
 
   /** @default 'perspective' */
   projection?: ProjectionMode
-  /** 机位；`none` 保持加载后的取景 @default 'front' */
+  /** 机位；`none` 保持加载后的取景；`angled` 为 3/4 斜视角 @default 'front' */
   presetView?: PresetView
+  /**
+   * 取景留白系数：相机距离 = 恰好框住模型包围球的距离 × padding，越小模型在画面里越大。
+   * 不传沿用加载后的取景（约 1.15）。有效范围 (0.5, 4]，范围外抛 RangeError。
+   */
+  padding?: number
   /** 多机位，按顺序出多张图 */
   views?: PresetView[]
 
@@ -76,6 +81,14 @@ export interface RenderedImage {
   view?: PresetView
   /** Resolved source file name used for loading */
   fileName?: string
+}
+
+/** 校验 `padding`：必须是 (0.5, 4] 内的有限数，否则抛 RangeError（在加载模型之前就失败） */
+export function assertValidPadding(padding: number | undefined): void {
+  if (padding == null) return
+  if (!Number.isFinite(padding) || padding <= 0.5 || padding > 4) {
+    throw new RangeError(`padding must be a finite number in (0.5, 4], got ${padding}`)
+  }
 }
 
 export function formatMime(format: ImageFormat): string {
@@ -187,6 +200,8 @@ export async function renderOne(
   height: number,
   format: ImageFormat
 ): Promise<RenderedImage> {
+  // 先按留白重新取景，再切机位：setPresetView 保持当前距离，只改方向
+  if (options.padding != null) engine.refitModel(options.padding, { animate: false })
   if (view && view !== 'none') {
     engine.setPresetView(view, { animate: false })
   }
@@ -260,6 +275,7 @@ export async function renderModelImages(
     ? options.views
     : [options.presetView ?? 'front']
 
+  assertValidPadding(options.padding)
   options.signal?.throwIfAborted?.()
 
   const file = await resolveModelInput(options.model, {

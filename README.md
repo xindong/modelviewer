@@ -470,7 +470,8 @@ const shots = await renderModelImages({
 | `width` / `height` | 输出像素，默认 1024×1024 |
 | `format` / `quality` | `png` \| `jpeg` \| `webp`；有损格式用 quality 0–1 |
 | `background` | `'transparent'` 或 CSS 颜色；jpeg 默认 `#ffffff` |
-| `presetView` / `views` | 单机位 / 多机位批量 |
+| `presetView` / `views` | 单机位 / 多机位批量；`front` `back` `side` `top` `angled`（3/4 斜视角，方位约 35°、仰角约 25°）`none`（保持加载后的取景） |
+| `padding` | 取景留白系数，相机距离 = 恰好框住包围球 × padding，越小模型越大；默认沿用加载后的取景（约 1.15），有效范围 (0.5, 4]，范围外抛 `RangeError` |
 | `projection` | `perspective` \| `orthographic` |
 | `textureMode` | `textured` \| `clay` \| `normal` \| `albedo` |
 | `lightAngle` / `lightIntensity` / `ambientIntensity` | 灯光 |
@@ -501,7 +502,7 @@ thumbs.dispose()     // 离开页面时释放；之后调用 render 会被拒绝
 
 `signal` 覆盖任务全生命周期：排队中取消立即拒绝，不必等前面的任务结束；运行中取消也立即拒绝，后台工作在下一个检查点终止。`dispose()` 会立即拒绝排队与运行中的全部任务。
 
-`render` 的选项与 `renderModelImage` 相同（尺寸、格式、背景、视角、投影、材质模式、灯光、全景、`signal` 等），区别是只出一张（不支持 `views`），返回带 `mime`、`width`、`height` 的 `RenderedImage`。每张图出完后会复位正交相机、全景和背景，上一张的参数不会影响下一张。
+`render` 的选项与 `renderModelImage` 相同（尺寸、格式、背景、视角、`padding`、投影、材质模式、灯光、全景、`signal` 等），区别是只出一张（不支持 `views`），**默认机位是 `angled`（3/4 斜视角）而不是 `front`**——正对镜头的规则形体（比如立方体）会退化成一块平面，看不出是 3D；需要正面时显式传 `presetView: 'front'`。缩略图想让模型占画面 60%–70% 时可传 `padding`（立方体约 1.25）。返回带 `mime`、`width`、`height` 的 `RenderedImage`。每张图出完后会复位正交相机、全景和背景，上一张的参数不会影响下一张。
 
 ### 限定格式与自托管 Draco 解码器
 
@@ -719,7 +720,7 @@ SDK 的边界（有意为之）：只做「资产导入 + 环境 + 取景 + 出�
 
 ```ts
 type ProjectionMode = 'perspective' | 'orthographic'
-type PresetView = 'front' | 'back' | 'side' | 'top' | 'none'
+type PresetView = 'front' | 'back' | 'side' | 'top' | 'angled' | 'none'
 type TextureMode = 'textured' | 'clay' | 'normal' | 'albedo'
 type Locale = 'zh-CN' | 'en-US'
 ```
