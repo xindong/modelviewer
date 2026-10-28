@@ -57,6 +57,12 @@ export interface ModelViewerTheme {
   border?: string
   /** Viewport background (any CSS `background` value, e.g. `transparent`) @default linear-gradient(...) */
   background?: string
+  /**
+   * Draw the active / hovered view and projection icons in the same plain white as the inactive ones.
+   * The icons are two-tone images with a built-in purple detail that CSS variables cannot recolour;
+   * turn this on when the theme's `primary` is not purple @default false
+   */
+  monochromeIcons?: boolean
 }
 
 export interface ModelViewerOptions {

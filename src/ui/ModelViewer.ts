@@ -408,6 +408,7 @@ class ModelViewer implements ModelViewerInstance {
     if (theme.panelBg) s.setProperty('--mv-panel-bg', theme.panelBg)
     if (theme.controlBg) s.setProperty('--mv-control-bg', theme.controlBg)
     if (theme.border) s.setProperty('--mv-border', theme.border)
+    if (theme.monochromeIcons) s.setProperty('--mv-icon-active-filter', 'brightness(0) saturate(100%) invert(100%)')
     if (theme.background) s.setProperty('--mv-bg', theme.background)
   }
 
@@ -541,9 +542,6 @@ class ModelViewer implements ModelViewerInstance {
 
     if (this.refs.dialSphere) {
       this.refs.dialSphere.style.transform = `rotate(${state.lightAngle - 90}deg)`
-    }
-    if (this.refs.dialTint) {
-      this.refs.dialTint.style.width = '22px'
     }
     if (this.refs.shaderRound) {
       this.refs.shaderRound.style.transform = `rotate(${state.lightAngle}deg)`

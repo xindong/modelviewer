@@ -9,6 +9,9 @@
   --mv-control-bg: rgba(26, 26, 26, 1);
   --mv-border: rgba(255, 255, 255, 0.08);
   --mv-bg: linear-gradient(180deg, #1c1f1f 0%, #525252 100%);
+  /* Filter for the active / hovered two-tone icons. `none` keeps their built-in purple
+     detail; the theme's `monochromeIcons` switches it to the same white as inactive icons. */
+  --mv-icon-active-filter: none;
   /* Legacy aliases, kept so hosts that override the old names keep working. */
   --primary-color: var(--mv-primary);
   --text-color-primary: var(--mv-text);
@@ -280,6 +283,11 @@
   gap: 8px;
 }
 
+/* One row of four: the preset views are a small fixed set. */
+.mv-root .mv-preset-grid {
+  grid-template-columns: repeat(4, 1fr);
+}
+
 .mv-root .mv-segment-btn {
   height: 36px;
   display: inline-flex;
@@ -327,12 +335,12 @@
 
 .mv-root .mv-segment-btn.is-active .mv-segment-icon img,
 .mv-root .mv-segment-btn:hover .mv-segment-icon img {
-  filter: none;
+  filter: var(--mv-icon-active-filter);
   opacity: 1;
 }
 
 .mv-root .mv-preset-btn {
-  height: 52px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -358,7 +366,7 @@
 
 .mv-root .mv-preset-btn:hover img,
 .mv-root .mv-preset-btn.is-active img {
-  filter: none;
+  filter: var(--mv-icon-active-filter);
   opacity: 1;
 }
 
@@ -375,7 +383,7 @@
 /* Light dial — original art */
 .mv-root .mv-light-dial {
   position: relative;
-  height: 148px;
+  height: 99px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -383,8 +391,8 @@
 
 .mv-root .mv-dial-outer {
   position: relative;
-  width: 124px;
-  height: 124px;
+  width: 83px;
+  height: 83px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -394,8 +402,8 @@
 }
 
 .mv-root .mv-dial-sphere {
-  width: 96px;
-  height: 96px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   background-image: url('../imgs/25fe0ef398d779527134.png');
   background-size: cover;
@@ -411,14 +419,15 @@
   border-radius: 50%;
   opacity: 0.1;
   background-color: #3a7ced;
-  width: 22px;
-  height: 22px;
+  /* Scales with the dial (22px at the original 96px sphere). */
+  width: 23%;
+  aspect-ratio: 1 / 1;
 }
 
 .mv-root .mv-shader-round {
   position: absolute;
-  width: 148px;
-  height: 148px;
+  width: 99px;
+  height: 99px;
   border-radius: 50%;
   border: 8px solid transparent;
   user-select: none;
@@ -893,11 +902,11 @@
 }
 
 /*
- * Compact layout. The side panels need ~670px at the default density, which is more than
- * a typical lightbox / dialog gives the viewer. Tiers are keyed on the height of the
- * viewer itself (container query), so a roomy host keeps the original look.
+ * Compact layout. The side panels need ~550px at the default density, which is more than
+ * a lightbox / dialog may give the viewer. Tiers are keyed on the height of the viewer
+ * itself (container query), so a roomy host keeps the default look.
  */
-@container mv (max-height: 780px) {
+@container mv (max-height: 700px) {
   .mv-root .mv-sidebar {
     top: 16px;
     max-height: calc(100% - 32px);
@@ -922,30 +931,28 @@
     gap: 6px;
   }
   .mv-root .mv-preset-btn {
-    height: 40px;
+    height: 38px;
   }
   .mv-root .mv-preset-btn img {
     width: 26px;
     height: 26px;
   }
   .mv-root .mv-light-dial {
-    height: 112px;
+    height: 88px;
   }
   .mv-root .mv-dial-outer {
-    width: 92px;
-    height: 92px;
+    width: 74px;
+    height: 74px;
   }
   .mv-root .mv-dial-sphere {
-    width: 70px;
-    height: 70px;
+    width: 56px;
+    height: 56px;
   }
   .mv-root .mv-shader-round {
-    width: 112px;
-    height: 112px;
+    width: 88px;
+    height: 88px;
   }
-  .mv-root .mv-slider-row {
-    height: 32px;
-  }
+  .mv-root .mv-slider-row,
   .mv-root .mv-input-number {
     height: 32px;
   }
@@ -964,19 +971,19 @@
     height: 22px;
   }
   .mv-root .mv-light-dial {
-    height: 88px;
+    height: 76px;
   }
   .mv-root .mv-dial-outer {
-    width: 72px;
-    height: 72px;
+    width: 62px;
+    height: 62px;
   }
   .mv-root .mv-dial-sphere {
-    width: 54px;
-    height: 54px;
+    width: 46px;
+    height: 46px;
   }
   .mv-root .mv-shader-round {
-    width: 88px;
-    height: 88px;
+    width: 76px;
+    height: 76px;
   }
 }
 
@@ -996,19 +1003,19 @@
     height: 20px;
   }
   .mv-root .mv-light-dial {
-    height: 72px;
+    height: 64px;
   }
   .mv-root .mv-dial-outer {
-    width: 60px;
-    height: 60px;
+    width: 52px;
+    height: 52px;
   }
   .mv-root .mv-dial-sphere {
-    width: 44px;
-    height: 44px;
+    width: 38px;
+    height: 38px;
   }
   .mv-root .mv-shader-round {
-    width: 72px;
-    height: 72px;
+    width: 64px;
+    height: 64px;
   }
   .mv-root .mv-slider-row,
   .mv-root .mv-input-number {
