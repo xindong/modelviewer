@@ -1,7 +1,8 @@
 import * as THREE from 'three'
 
 export type ProjectionMode = 'perspective' | 'orthographic'
-export type PresetView = 'front' | 'back' | 'side' | 'top' | 'none'
+/** `angled` = 右前上方的 3/4 斜视角（方位约 35°、仰角约 25°），用于让缩略图看得出立体感 */
+export type PresetView = 'front' | 'back' | 'side' | 'top' | 'angled' | 'none'
 /** Engine texture display modes (stable public API keys) */
 export type TextureMode = 'textured' | 'clay' | 'normal' | 'albedo'
 

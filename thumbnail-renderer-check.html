@@ -31,6 +31,12 @@ window.run = async () => {
   out.cameraReset = first.opaqueRatio === second.opaqueRatio
   out.firstVsAgain = [first.opaqueRatio, second.opaqueRatio]
   out.ms = Math.round(performance.now() - t0)
+  // angled 预设 + padding：默认机位为 angled；padding 越小模型占比越大；非法 padding 在加载前拒绝
+  const occ = async (opts) => (await stats((await r.render({ model, fileName: 'a.glb', width: 256, ...opts })).blob)).opaqueRatio
+  out.angledDefaultEqualsExplicit = (await occ({})) === (await occ({ presetView: 'angled' }))
+  out.angledDiffersFromFront = (await occ({ presetView: 'angled' })) !== (await occ({ presetView: 'front' }))
+  out.paddingShrinksOrGrows = (await occ({ padding: 1.0 })) > (await occ({ padding: 1.5 }))
+  out.badPadding = await Promise.all([0.5, 9, NaN].map(p => r.render({ model, fileName: 'a.glb', padding: p }).then(() => 'resolved', e => e.name)))
   // 格式限制
   setEnabledFormats(['glb'])
   out.zipRejected = await r.render({ model, fileName: 'pack.zip' }).then(() => false, e => String(e.message))

@@ -390,6 +390,28 @@ export class ViewerEngine {
   }
 
   /**
+   * 按给定留白系数重新取景整个已加载的模型（保持当前观察方向）。
+   * 没有模型时什么也不做；用于出图前统一调整模型在画面里的占比。
+   */
+  refitModel(padding: number, options: { animate?: boolean } = {}): FocusPose | null {
+    if (!this.modelRoot) return null
+    const pose = this.focusObject(this.modelRoot, { padding, animate: options.animate ?? false })
+    if (pose) this.fitClippingPlanes(pose)
+    return pose
+  }
+
+  /**
+   * 留白会把相机移远（最大 4 倍包围球距离），固定的远裁剪面会把大模型整个裁掉、出图变空白。
+   * 这里让远裁剪面至少覆盖「相机距离 + 包围球半径」并留 50% 余量；不低于默认值，
+   * 所以每次重新取景都会把上一次放大的裁剪面复位。
+   */
+  private fitClippingPlanes(pose: FocusPose) {
+    const reach = (pose.distance + pose.radius) * 1.5
+    this.perspectiveCamera.far = Math.max(CAMERA_CONFIG.FAR_CLIP, reach)
+    this.perspectiveCamera.updateProjectionMatrix()
+  }
+
+  /**
    * 把相机聚焦到某个对象（选中后按 F 那种）。
    * 取景算法在 core/camera.ts 的 computeFocusPose 里，自建场景可直接复用。
    */
@@ -900,6 +922,17 @@ export class ViewerEngine {
       case 'top':
         position.set(0, distance, 0.001)
         break
+      case 'angled': {
+        // 方位 35°（朝 +X 偏）、仰角 25°：三个面同时可见，立方体不再退化成一块平面
+        const azimuth = THREE.MathUtils.degToRad(35)
+        const elevation = THREE.MathUtils.degToRad(25)
+        position.set(
+          distance * Math.cos(elevation) * Math.sin(azimuth),
+          distance * Math.sin(elevation),
+          distance * Math.cos(elevation) * Math.cos(azimuth)
+        )
+        break
+      }
       default:
         return
     }
