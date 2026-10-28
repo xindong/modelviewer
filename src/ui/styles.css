@@ -1,10 +1,27 @@
 .mv-root {
+  /* Theme variables. Every colour in the default UI derives from these, so a host can
+     restyle the viewer by setting them (or through the `theme` option). The defaults
+     reproduce the original look exactly. Colours that are white / primary with an alpha
+     are derived with color-mix, so any CSS colour (including var(...)) works here.
+
+     Backward compatibility: before 0.8.2 hosts customised the viewer by overriding
+     --primary-color / --text-color-primary / --stroke02 / --primary-color-alpha on
+     .mv-root. Those names stay defined locally here (so a same-named variable in the host
+     page can never leak in, exactly as before) and the new variables read them, so such
+     overrides keep working. */
   --primary-color: #745ef5;
-  --primary-color-alpha: rgba(116, 94, 245, 0.1);
-  --bg-color-secondary: rgba(255, 255, 255, 0.1);
   --text-color-primary: #ffffff;
-  --stroke02: rgba(255, 255, 255, 0.05);
-  --panel-bg: rgba(26, 26, 26, 1);
+  --mv-primary: var(--primary-color);
+  --mv-text: var(--text-color-primary);
+  --mv-panel-bg: rgba(18, 18, 18, 0.92);
+  --mv-control-bg: rgba(26, 26, 26, 1);
+  --mv-border: rgba(255, 255, 255, 0.08);
+  --mv-bg: linear-gradient(180deg, #1c1f1f 0%, #525252 100%);
+  --stroke02: color-mix(in srgb, var(--mv-text) 5%, transparent);
+  --primary-color-alpha: color-mix(in srgb, var(--mv-primary) 10%, transparent);
+  /* Filter for the active / hovered two-tone icons. `none` keeps their built-in purple
+     detail; the theme's `monochromeIcons` switches it to the same white as inactive icons. */
+  --mv-icon-active-filter: none;
   --mv-fill: 10%;
 
   position: relative;
@@ -12,7 +29,11 @@
   height: 100%;
   min-height: 240px;
   overflow: hidden;
-  color: var(--text-color-primary);
+  /* Lets the panels adapt to the height the host gives the viewer (see the compact
+     tiers at the end of this file). Needs the explicit container height the README
+     already requires. */
+  container: mv / size;
+  color: var(--mv-text);
   font-family:
     -apple-system,
     BlinkMacSystemFont,
@@ -22,7 +43,7 @@
     'Microsoft YaHei',
     sans-serif;
   font-size: 14px;
-  background: linear-gradient(180deg, #1c1f1f 0%, #525252 100%);
+  background: var(--mv-bg);
   -webkit-font-smoothing: antialiased;
   box-sizing: border-box;
 }
@@ -80,9 +101,9 @@
   transform: translate(-50%, -50%);
   width: 256px;
   height: 256px;
-  background: rgba(26, 26, 26, 1);
+  background: var(--mv-control-bg);
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid color-mix(in srgb, var(--mv-text) 5%, transparent);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -94,8 +115,8 @@
 .mv-root .mv-spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid rgba(255, 255, 255, 0.15);
-  border-top-color: #ffffff;
+  border: 3px solid color-mix(in srgb, var(--mv-text) 15%, transparent);
+  border-top-color: var(--mv-text);
   border-radius: 50%;
   animation: mv-spin 0.8s linear infinite;
 }
@@ -108,12 +129,12 @@
 
 .mv-root .mv-loading-text {
   padding-top: 12px;
-  color: rgba(255, 255, 255, 0.85);
+  color: color-mix(in srgb, var(--mv-text) 85%, transparent);
   font-size: 14px;
 }
 
 .mv-root .mv-loading-text .mv-progress {
-  color: var(--primary-color);
+  color: var(--mv-primary);
   margin-left: 4px;
 }
 
@@ -155,18 +176,18 @@
 .mv-root .mv-sidebar-shell {
   flex: 1 1 auto;
   min-height: 0;
-  max-height: calc(100vh - 96px);
+  max-height: 100%;
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
-  background: rgba(18, 18, 18, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--mv-panel-bg);
+  border: 1px solid var(--mv-border);
   border-radius: 12px;
   box-shadow:
     0 12px 40px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    inset 0 1px 0 color-mix(in srgb, var(--mv-text) 4%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
@@ -180,12 +201,12 @@
 }
 
 .mv-root .mv-sidebar-shell::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.16);
+  background: color-mix(in srgb, var(--mv-text) 16%, transparent);
   border-radius: 999px;
 }
 
 .mv-root .mv-sidebar-shell::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.28);
+  background: color-mix(in srgb, var(--mv-text) 28%, transparent);
 }
 
 .mv-root .mv-section {
@@ -200,7 +221,7 @@
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.02em;
-  color: rgba(255, 255, 255, 0.92);
+  color: color-mix(in srgb, var(--mv-text) 92%, transparent);
 }
 
 .mv-root .mv-divider {
@@ -209,8 +230,8 @@
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 255, 255, 0.08) 12%,
-    rgba(255, 255, 255, 0.08) 88%,
+    color-mix(in srgb, var(--mv-text) 8%, transparent) 12%,
+    color-mix(in srgb, var(--mv-text) 8%, transparent) 88%,
     transparent
   );
 }
@@ -223,7 +244,7 @@
 
 .mv-root .mv-field-label {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.42);
+  color: color-mix(in srgb, var(--mv-text) 42%, transparent);
 }
 
 .mv-root .mv-info-list {
@@ -241,13 +262,13 @@
 }
 
 .mv-root .mv-info-label {
-  color: rgba(255, 255, 255, 0.42);
+  color: color-mix(in srgb, var(--mv-text) 42%, transparent);
   font-size: 12px;
   flex-shrink: 0;
 }
 
 .mv-root .mv-info-value {
-  color: rgba(255, 255, 255, 0.92);
+  color: color-mix(in srgb, var(--mv-text) 92%, transparent);
   font-size: 13px;
   text-align: right;
   word-break: break-all;
@@ -269,6 +290,11 @@
   gap: 8px;
 }
 
+/* One row of four: the preset views are a small fixed set. */
+.mv-root .mv-preset-grid {
+  grid-template-columns: repeat(4, 1fr);
+}
+
 .mv-root .mv-segment-btn {
   height: 36px;
   display: inline-flex;
@@ -277,8 +303,8 @@
   gap: 6px;
   border-radius: 8px;
   border: 1px solid transparent;
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.88);
+  background: color-mix(in srgb, var(--mv-text) 5%, transparent);
+  color: color-mix(in srgb, var(--mv-text) 88%, transparent);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -289,14 +315,14 @@
 }
 
 .mv-root .mv-segment-btn:hover {
-  border-color: rgba(116, 94, 245, 0.7);
-  color: #fff;
+  border-color: color-mix(in srgb, var(--mv-primary) 70%, transparent);
+  color: var(--mv-text);
 }
 
 .mv-root .mv-segment-btn.is-active {
-  border-color: var(--primary-color);
-  color: var(--primary-color);
-  background: rgba(116, 94, 245, 0.08);
+  border-color: var(--mv-primary);
+  color: var(--mv-primary);
+  background: color-mix(in srgb, var(--mv-primary) 8%, transparent);
 }
 
 .mv-root .mv-segment-icon {
@@ -316,18 +342,18 @@
 
 .mv-root .mv-segment-btn.is-active .mv-segment-icon img,
 .mv-root .mv-segment-btn:hover .mv-segment-icon img {
-  filter: none;
+  filter: var(--mv-icon-active-filter);
   opacity: 1;
 }
 
 .mv-root .mv-preset-btn {
-  height: 52px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 10px;
   border: 1px solid transparent;
-  background: rgba(255, 255, 255, 0.04);
+  background: color-mix(in srgb, var(--mv-text) 4%, transparent);
   cursor: pointer;
   transition:
     border-color 0.15s ease,
@@ -347,24 +373,31 @@
 
 .mv-root .mv-preset-btn:hover img,
 .mv-root .mv-preset-btn.is-active img {
-  filter: none;
+  filter: var(--mv-icon-active-filter);
   opacity: 1;
 }
 
 .mv-root .mv-preset-btn:hover {
-  border-color: rgba(116, 94, 245, 0.55);
-  background: rgba(116, 94, 245, 0.08);
+  border-color: color-mix(in srgb, var(--mv-primary) 55%, transparent);
+  background: color-mix(in srgb, var(--mv-primary) 8%, transparent);
 }
 
 .mv-root .mv-preset-btn.is-active {
-  border-color: var(--primary-color);
-  background: rgba(116, 94, 245, 0.12);
+  border-color: var(--mv-primary);
+  background: color-mix(in srgb, var(--mv-primary) 12%, transparent);
 }
 
 /* Light dial — original art */
 .mv-root .mv-light-dial {
+  /* Distance between the white disc and the rotating ring that carries the sun handle.
+     The handle is placed from it (see .mv-shader-round::after), so resizing the dial only
+     means updating this value. */
+  --mv-dial-gap: 8px;
   position: relative;
-  height: 148px;
+  /* The handle now sits clear of the disc, i.e. above the ring's box; keep the label above it
+     clear (14 = 20px reach - 6px). */
+  margin-top: calc(14px - var(--mv-dial-gap));
+  height: 99px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -372,8 +405,8 @@
 
 .mv-root .mv-dial-outer {
   position: relative;
-  width: 124px;
-  height: 124px;
+  width: 83px;
+  height: 83px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -383,8 +416,8 @@
 }
 
 .mv-root .mv-dial-sphere {
-  width: 96px;
-  height: 96px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   background-image: url('../imgs/25fe0ef398d779527134.png');
   background-size: cover;
@@ -400,14 +433,15 @@
   border-radius: 50%;
   opacity: 0.1;
   background-color: #3a7ced;
-  width: 22px;
-  height: 22px;
+  /* Scales with the dial (22px at the original 96px sphere). */
+  width: 23%;
+  aspect-ratio: 1 / 1;
 }
 
 .mv-root .mv-shader-round {
   position: absolute;
-  width: 148px;
-  height: 148px;
+  width: 99px;
+  height: 99px;
   border-radius: 50%;
   border: 8px solid transparent;
   user-select: none;
@@ -423,7 +457,11 @@
 .mv-root .mv-shader-round::after {
   content: '';
   position: absolute;
-  top: -6px;
+  /* `top` is measured from the padding box, i.e. inside the ring's 8px transparent border.
+     Bottom edge 4px outside the disc: gap - 8px (border) - 16px (handle) - 4px. The old fixed
+     -6px put the handle's centre only 2px above the rim (so it straddled it, looking sunk
+     in) and sank further once the dial was scaled down. */
+  top: calc(var(--mv-dial-gap) - 28px);
   left: 50%;
   transform: translateX(-50%);
   width: 16px;
@@ -450,7 +488,7 @@
   width: 100%;
   height: 8px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--mv-text) 10%, transparent);
   outline: none;
   cursor: pointer;
 }
@@ -460,10 +498,10 @@
   border-radius: 16px;
   background: linear-gradient(
     to right,
-    var(--primary-color) 0%,
-    var(--primary-color) var(--fill, 10%),
-    rgba(255, 255, 255, 0.1) var(--fill, 10%),
-    rgba(255, 255, 255, 0.1) 100%
+    var(--mv-primary) 0%,
+    var(--mv-primary) var(--fill, 10%),
+    color-mix(in srgb, var(--mv-text) 10%, transparent) var(--fill, 10%),
+    color-mix(in srgb, var(--mv-text) 10%, transparent) 100%
   );
 }
 
@@ -474,8 +512,8 @@
   height: 16px;
   margin-top: -4px;
   border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 0 0 2px #ffffff;
+  background: var(--mv-text);
+  box-shadow: 0 0 0 2px var(--mv-text);
   cursor: pointer;
   transition: box-shadow 0.2s ease;
 }
@@ -487,13 +525,13 @@
 .mv-root .mv-native-slider::-moz-range-track {
   height: 8px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--mv-text) 10%, transparent);
 }
 
 .mv-root .mv-native-slider::-moz-range-progress {
   height: 8px;
   border-radius: 16px;
-  background: var(--primary-color);
+  background: var(--mv-primary);
 }
 
 .mv-root .mv-native-slider::-moz-range-thumb {
@@ -501,7 +539,7 @@
   height: 16px;
   border: none;
   border-radius: 50%;
-  background: #ffffff;
+  background: var(--mv-text);
   cursor: pointer;
 }
 
@@ -509,9 +547,9 @@
   width: 72px;
   height: 36px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
+  border: 1px solid color-mix(in srgb, var(--mv-text) 15%, transparent);
+  background: color-mix(in srgb, var(--mv-text) 5%, transparent);
+  color: var(--mv-text);
   text-align: center;
   font-size: 14px;
   outline: none;
@@ -521,8 +559,8 @@
 
 .mv-root .mv-input-number:hover,
 .mv-root .mv-input-number:focus {
-  border-color: rgba(116, 94, 245, 1);
-  box-shadow: 0 0 0 2px rgba(116, 94, 245, 0.1);
+  border-color: var(--mv-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--mv-primary) 10%, transparent);
 }
 
 .mv-root .mv-input-number::-webkit-inner-spin-button,
@@ -556,9 +594,9 @@
   gap: 8px;
   height: 100%;
   padding: 5px 12px;
-  background: rgba(26, 26, 26, 1);
+  background: var(--mv-control-bg);
   border-radius: 8px;
-  border: 1px solid var(--stroke02, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--stroke02);
 }
 
 .mv-root .mv-texture-btn {
@@ -576,7 +614,7 @@
 
 .mv-root .mv-texture-btn.is-active,
 .mv-root .mv-texture-btn:hover {
-  border: 2px solid rgba(255, 255, 255, 1);
+  border: 2px solid var(--mv-text);
 }
 
 .mv-root .mv-texture-btn img {
@@ -591,10 +629,10 @@
   align-items: center;
   justify-content: center;
   height: 36px;
-  background: rgba(26, 26, 26, 1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--mv-control-bg);
+  border: 1px solid color-mix(in srgb, var(--mv-text) 10%, transparent);
   border-radius: 8px;
-  color: rgba(255, 255, 255, 1);
+  color: var(--mv-text);
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 14px;
@@ -606,8 +644,8 @@
 }
 
 .mv-root .mv-action-btn:hover {
-  background: rgba(26, 26, 26, 0.8);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: color-mix(in srgb, var(--mv-control-bg) 80%, transparent);
+  border-color: color-mix(in srgb, var(--mv-text) 20%, transparent);
 }
 
 .mv-root .mv-action-btn.is-disabled {
@@ -630,27 +668,27 @@
 
 .mv-root .mv-export-btn {
   border: none;
-  background: rgba(116, 94, 245, 1);
+  background: var(--mv-primary);
   color: #fff;
 }
 
 .mv-root .mv-export-btn:hover {
-  background: rgba(116, 94, 245, 0.9);
+  background: color-mix(in srgb, var(--mv-primary) 90%, transparent);
 }
 
 .mv-root .mv-export-btn:active {
-  background: rgba(116, 94, 245, 0.8);
+  background: color-mix(in srgb, var(--mv-primary) 80%, transparent);
 }
 
 .mv-root .mv-import-btn {
-  background: rgba(26, 26, 26, 1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: var(--mv-control-bg);
+  border: 1px solid color-mix(in srgb, var(--mv-text) 10%, transparent);
+  color: var(--mv-text);
 }
 
 .mv-root .mv-import-btn:hover {
-  border-color: rgba(116, 94, 245, 1);
-  color: var(--primary-color);
+  border-color: var(--mv-primary);
+  color: var(--mv-primary);
 }
 
 /* Tooltip */
@@ -692,7 +730,7 @@
   left: 50%;
   transform: translate(-50%, -50%);
   text-align: center;
-  color: rgba(255, 255, 255, 0.55);
+  color: color-mix(in srgb, var(--mv-text) 55%, transparent);
   pointer-events: none;
   z-index: 5;
 }
@@ -700,7 +738,7 @@
 .mv-root .mv-empty-title {
   font-size: 16px;
   margin-bottom: 8px;
-  color: rgba(255, 255, 255, 0.75);
+  color: color-mix(in srgb, var(--mv-text) 75%, transparent);
 }
 
 .mv-root .mv-empty-desc {
@@ -730,9 +768,9 @@
   max-width: 420px;
   padding: 10px 16px;
   border-radius: 8px;
-  background: rgba(26, 26, 26, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: color-mix(in srgb, var(--mv-control-bg) 95%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mv-text) 10%, transparent);
+  color: var(--mv-text);
   font-size: 14px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   animation: mv-toast-in 0.2s ease;
@@ -768,8 +806,8 @@
   width: 100%;
   height: 96px;
   border-radius: 10px;
-  border: 1px dashed rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed color-mix(in srgb, var(--mv-text) 18%, transparent);
+  background: color-mix(in srgb, var(--mv-text) 4%, transparent);
   cursor: pointer;
   overflow: hidden;
   transition:
@@ -778,12 +816,12 @@
 }
 
 .mv-root .mv-panorama-slot:hover {
-  border-color: rgba(116, 94, 245, 0.7);
-  background: rgba(116, 94, 245, 0.08);
+  border-color: color-mix(in srgb, var(--mv-primary) 70%, transparent);
+  background: color-mix(in srgb, var(--mv-primary) 8%, transparent);
 }
 
 .mv-root .mv-panorama-slot:focus-within {
-  border-color: rgba(116, 94, 245, 0.7);
+  border-color: color-mix(in srgb, var(--mv-primary) 70%, transparent);
 }
 
 /* 铺满整块区域的透明按钮：点击即导入 / 替换，键盘可达性交给原生 button */
@@ -795,14 +833,14 @@
 }
 
 .mv-root .mv-panorama-hit:focus-visible {
-  outline: 2px solid var(--primary-color);
+  outline: 2px solid var(--mv-primary);
   outline-offset: -3px;
 }
 
 .mv-root .mv-panorama-slot.has-panorama {
   border-style: solid;
-  border-color: rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.02);
+  border-color: color-mix(in srgb, var(--mv-text) 14%, transparent);
+  background: color-mix(in srgb, var(--mv-text) 2%, transparent);
 }
 
 .mv-root .mv-panorama-empty {
@@ -814,7 +852,7 @@
   justify-content: center;
   gap: 8px;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.6);
+  color: color-mix(in srgb, var(--mv-text) 60%, transparent);
 }
 
 .mv-root .mv-panorama-empty img {
@@ -824,7 +862,7 @@
 }
 
 .mv-root .mv-panorama-slot:hover .mv-panorama-empty {
-  color: rgba(255, 255, 255, 0.92);
+  color: color-mix(in srgb, var(--mv-text) 92%, transparent);
 }
 
 .mv-root .mv-panorama-preview {
@@ -881,3 +919,163 @@
   }
 }
 
+/*
+ * Compact layout. The side panels need ~550px at the default density, which is more than
+ * a lightbox / dialog may give the viewer. Tiers are keyed on the height of the viewer
+ * itself (container query), so a roomy host keeps the default look.
+ */
+@container mv (max-height: 780px) {
+  .mv-root .mv-panorama-slot {
+    height: 64px;
+  }
+}
+
+@container mv (max-height: 700px) {
+  .mv-root .mv-sidebar {
+    top: 16px;
+    max-height: calc(100% - 32px);
+  }
+  .mv-root .mv-sidebar-left {
+    left: 16px;
+  }
+  .mv-root .mv-sidebar-right {
+    right: 16px;
+  }
+  .mv-root .mv-section {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+  .mv-root .mv-field {
+    gap: 6px;
+  }
+  .mv-root .mv-segment-btn {
+    height: 32px;
+  }
+  .mv-root .mv-preset-grid {
+    gap: 6px;
+  }
+  .mv-root .mv-preset-btn {
+    height: 38px;
+  }
+  .mv-root .mv-preset-btn img {
+    width: 26px;
+    height: 26px;
+  }
+  .mv-root .mv-light-dial {
+    --mv-dial-gap: 7px;
+    height: 88px;
+  }
+  .mv-root .mv-dial-outer {
+    width: 74px;
+    height: 74px;
+  }
+  .mv-root .mv-dial-sphere {
+    width: 56px;
+    height: 56px;
+  }
+  .mv-root .mv-shader-round {
+    width: 88px;
+    height: 88px;
+  }
+  .mv-root .mv-slider-row,
+  .mv-root .mv-input-number {
+    height: 32px;
+  }
+  .mv-root .mv-panorama-slot {
+    height: 52px;
+  }
+  .mv-root .mv-panorama-empty img {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+@container mv (max-height: 600px) {
+  .mv-root .mv-section {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  .mv-root .mv-preset-btn {
+    height: 34px;
+  }
+  .mv-root .mv-preset-btn img {
+    width: 22px;
+    height: 22px;
+  }
+  .mv-root .mv-light-dial {
+    --mv-dial-gap: 7px;
+    height: 76px;
+  }
+  .mv-root .mv-dial-outer {
+    width: 62px;
+    height: 62px;
+  }
+  .mv-root .mv-dial-sphere {
+    width: 46px;
+    height: 46px;
+  }
+  .mv-root .mv-shader-round {
+    width: 76px;
+    height: 76px;
+  }
+  .mv-root .mv-panorama-slot {
+    height: 44px;
+  }
+}
+
+@container mv (max-height: 540px) {
+  .mv-root .mv-section {
+    padding: 8px 12px;
+    gap: 6px;
+  }
+  .mv-root .mv-segment-btn {
+    height: 28px;
+  }
+  .mv-root .mv-preset-btn {
+    height: 30px;
+  }
+  .mv-root .mv-preset-btn img {
+    width: 20px;
+    height: 20px;
+  }
+  .mv-root .mv-light-dial {
+    --mv-dial-gap: 5px;
+    height: 56px;
+  }
+  .mv-root .mv-dial-outer {
+    width: 46px;
+    height: 46px;
+  }
+  .mv-root .mv-dial-sphere {
+    width: 34px;
+    height: 34px;
+  }
+  .mv-root .mv-shader-round {
+    width: 56px;
+    height: 56px;
+  }
+  .mv-root .mv-slider-row,
+  .mv-root .mv-input-number {
+    height: 28px;
+  }
+  .mv-root .mv-field {
+    gap: 4px;
+  }
+  .mv-root .mv-panorama-slot {
+    height: 28px;
+  }
+  .mv-root .mv-panorama-empty img {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* Narrow hosts: two 300px panels would leave almost no room for the model. */
+@container mv (max-width: 860px) {
+  .mv-root .mv-sidebar {
+    width: 248px;
+  }
+  .mv-root .mv-file-name {
+    max-width: 120px;
+  }
+}

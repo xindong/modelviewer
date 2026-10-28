@@ -1,6 +1,6 @@
 {
   "name": "mivo-model-viewer",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "description": "Browser 3D viewer SDK and pure Node model processing CLI: inspect, render, convert and optimize.",
   "type": "module",
   "license": "MIT",

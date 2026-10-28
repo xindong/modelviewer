@@ -45,14 +45,24 @@ export interface ModelViewerUIOptions {
 }
 
 export interface ModelViewerTheme {
-  /** Accent / primary @default #745ef5 */
+  /** Accent: active states, slider fill, hover outlines. Any CSS colour, `var(...)` included @default #745ef5 */
   primary?: string
-  /** Root text color @default #ffffff */
+  /** Foreground. Muted text, hover and divider tints are derived from it @default #ffffff */
   text?: string
-  /** Panel surface @default rgba(26,26,26,0.92) */
+  /** Side-panel surface @default rgba(18,18,18,0.92) */
   panelBg?: string
-  /** Viewport background CSS @default linear-gradient(...) */
+  /** Surface of the toolbar group and the small action buttons @default rgba(26,26,26,1) */
+  controlBg?: string
+  /** Side-panel outline @default rgba(255,255,255,0.08) */
+  border?: string
+  /** Viewport background (any CSS `background` value, e.g. `transparent`) @default linear-gradient(...) */
   background?: string
+  /**
+   * Draw the active / hovered view and projection icons in the same plain white as the inactive ones.
+   * The icons are two-tone images with a built-in purple detail that CSS variables cannot recolour;
+   * turn this on when the theme's `primary` is not purple @default false
+   */
+  monochromeIcons?: boolean
 }
 
 export interface ModelViewerOptions {

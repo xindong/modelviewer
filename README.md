@@ -374,7 +374,24 @@ const viewer = createModelViewer(document.getElementById('view')!, {
 viewer.dispose() // 路由离开时释放 WebGL / DOM / 监听
 ```
 
-主题通过根节点 CSS 变量生效：`--mv-primary`、`--mv-text`、`--mv-panel-bg`、`--mv-bg`。
+主题通过根节点 CSS 变量生效，`theme` 选项与直接设置变量等价：
+
+| 变量 / `theme` 字段 | 作用 | 默认值 |
+|---|---|---|
+| `--mv-primary` / `primary` | 强调色：选中态、滑块填充、悬停描边 | `#745ef5` |
+| `--mv-text` / `text` | 前景色；次要文字、悬停和分隔线的浅色都由它按透明度派生 | `#ffffff` |
+| `--mv-panel-bg` / `panelBg` | 侧栏面板底色 | `rgba(18,18,18,0.92)` |
+| `--mv-control-bg` / `controlBg` | 底部工具条与小按钮底色 | `rgba(26,26,26,1)` |
+| `--mv-border` / `border` | 侧栏面板描边 | `rgba(255,255,255,0.08)` |
+| `--mv-bg` / `background` | 视口背景（任意 CSS `background` 值，如 `transparent`） | 深灰渐变 |
+| `--mv-icon-active-filter` / `monochromeIcons` | 选中 / 悬停的视角、投影图标是自带紫色细节的双色图，CSS 变量无法改色；设为 `true` 让它们和未选中时一样显示为纯白 | `none`（保留紫色细节） |
+
+取值可以是任意 CSS 颜色，**包括 `var(--your-token)`**，所以可以直接接宿主的设计 token；带透明度的派生色用 `color-mix()` 计算。
+圆盘白盘、提示气泡、状态色（成功 / 错误 / 警告）是有意固定的，不随主题变化。
+
+**自适应高度**：面板在默认密度下约需 550px 高（预设视角一行四个、灯光圆盘为原来的 2/3）。查看器按自身容器高度分档（≤700px、≤600px、≤540px）自动收紧间距与控件尺寸，
+≤860px 宽时侧栏收窄到 248px，因此放进对话框 / 灯箱这类空间有限的容器也不会出现面板滚动条。空间充裕时保持原来的宽松布局。
+容器必须有明确的高度（见上文）。
 
 ### 2. 无头模式（完全自定义 UI）
 
