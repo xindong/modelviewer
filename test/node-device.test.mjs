@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { prepareDevice, checkDevice } from '../node/gpu-device.mjs';
+import { prepareDevice, checkDevice } from '../packages/node/gpu-device.mjs';
 
 test('software Vulkan selection is isolated from the host environment', async () => {
   const directory = await mkdtemp(path.join(tmpdir(), 'mivo-device-test-'));

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { unpremultiplySRGB } from '../node/pixels.mjs';
-import { validateOptions } from '../node/options.mjs';
+import { unpremultiplySRGB } from '../packages/node/pixels.mjs';
+import { validateOptions } from '../packages/node/options.mjs';
 test('sRGB readback is unpremultiplied in linear color space', () => {
   const bytes = Uint8Array.from([188,0,0,128, 10,20,30,255, 22,33,44,0]);
   unpremultiplySRGB(bytes);

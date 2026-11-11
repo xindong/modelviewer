@@ -5,11 +5,11 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { validateOptions } from '../node/options.mjs';
-import { runCli, outputPaths, preflightOutputs, writeOutputs } from '../node/cli.mjs';
-import { createModelProcessor } from '../node/index.mjs';
+import { validateOptions } from '../packages/node/options.mjs';
+import { runCli, outputPaths, preflightOutputs, writeOutputs } from '../packages/node/cli.mjs';
+import { createModelProcessor } from '../packages/node/index.mjs';
 
-const cli = fileURLToPath(new URL('../node/cli.mjs', import.meta.url));
+const cli = fileURLToPath(new URL('../packages/node/cli.mjs', import.meta.url));
 const argv = (...args) => ['node', cli, ...args];
 const failure = code => e => e.code === code;
 async function scratch(t) {
@@ -300,7 +300,7 @@ test('installed-style CLI symlink executes the command entrypoint', async t => {
   await symlink(cli, bin);
   const result = spawnSync(process.execPath, [bin, '--version'], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
-  const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+  const pkg = JSON.parse(await readFile(new URL('../packages/node/package.json', import.meta.url), 'utf8'));
   assert.equal(result.stdout.trim(), pkg.version);
 });
 

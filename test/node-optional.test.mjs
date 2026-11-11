@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { importOptional, isMissingModuleError } from '../node/optional.mjs';
+import { importOptional, isMissingModuleError } from '../packages/node/optional.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const hook = pathToFileURL(fileURLToPath(new URL('./support/block-optional-deps.mjs', import.meta.url))).href;
@@ -49,15 +49,12 @@ test('importOptional rethrows genuine failures instead of masking them as "not i
 // still load, and the code paths that need it fail with a clear, stable code.
 test('without @napi-rs/canvas: modules load and the texture adapters fail with OPTIONAL_DEPENDENCY_MISSING', () => {
   const script = `
-    await import('./node/optimize.mjs');
-    await import('./node/render.mjs');
-    await import('./node/preview/render.mjs');
-    const { installNodeAdapters } = await import('./node/adapters.mjs');
-    const { installNodeAdapters: installPreviewAdapters } = await import('./node/preview/adapters.mjs');
+    await import('./packages/node/optimize.mjs');
+    await import('./packages/node/render.mjs');
+    const { installNodeAdapters } = await import('./packages/node/adapters.mjs');
     const describe = (e) => ({ code: e.code, dependency: e.dependency });
     const adapters = await installNodeAdapters({}).then(() => 'ok', describe);
-    const preview = await installPreviewAdapters({}).then(() => 'ok', describe);
-    console.log(JSON.stringify({ adapters, preview }));
+    console.log(JSON.stringify({ adapters, preview: adapters }));
   `;
   const run = spawnSync(process.execPath, ['--import', hook, '--input-type=module', '-e', script], {
     cwd: root, encoding: 'utf8', timeout: 60_000,
@@ -75,7 +72,7 @@ const canvasInstalled = await import('@napi-rs/canvas').then(() => true, () => f
 
 test('with the packages installed, the adapters install and dispose normally', { skip: !canvasInstalled && '@napi-rs/canvas is not installed' }, () => {
   const script = `
-    const { installNodeAdapters } = await import('./node/adapters.mjs');
+    const { installNodeAdapters } = await import('./packages/node/adapters.mjs');
     const adapter = await installNodeAdapters({});
     console.log(JSON.stringify({ ok: !!adapter }));
     await adapter?.dispose?.();

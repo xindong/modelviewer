@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>UI check</title>
+    <style>
+      html,
+      body,
+      #app {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module">
+      import { createModelViewer } from './src/index.ts'
+
+      createModelViewer('#app', {
+        locale: 'zh-CN',
+        src: undefined,
+        onReady: () => {
+          window.__uiReady = true
+        }
+      })
+
+      // auto-load sample model
+      const res = await fetch('/actionvideo_unreal.glb')
+      const blob = await res.blob()
+      const file = new File([blob], 'actionvideo_unreal.glb', { type: 'model/gltf-binary' })
+      const input = document.querySelector('[data-mv="fileInput"]')
+      const dt = new DataTransfer()
+      dt.items.add(file)
+      input.files = dt.files
+      input.dispatchEvent(new Event('change', { bubbles: true }))
+      window.__loadStarted = true
+    </script>
+  </body>
+</html>

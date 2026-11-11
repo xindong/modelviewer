@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { Document, Format } from '@gltf-transform/core';
 import { strToU8, zipSync } from 'fflate';
 import sharp from 'sharp';
-import { createNodeIO } from '../node/load.mjs';
-import { convertModelToGlb, optimizeModel } from '../node/index.mjs';
-import { validateOptions } from '../node/options.mjs';
+import { createNodeIO } from '../packages/node/load.mjs';
+import { convertModelToGlb, optimizeModel } from '../packages/node/index.mjs';
+import { validateOptions } from '../packages/node/options.mjs';
 
 // Run after the switching implementation lands: node --test test/node-switching.test.mjs
 // All models, archive resources, and textures are generated locally; no renderer is invoked.

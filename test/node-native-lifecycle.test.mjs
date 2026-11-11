@@ -4,7 +4,7 @@ import { mkdtemp, writeFile, readFile, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
-import { createModelProcessor } from '../node/index.mjs';
+import { createModelProcessor } from '../packages/node/index.mjs';
 
 const source = {
   bytes: Buffer.from('; FBX 7.4.0 project file\nFBXHeaderExtension: {\n FBXVersion: 7400\n}\n'),
@@ -108,7 +108,7 @@ if (process.argv.includes('--version')) {
 }
 `, { mode: 0o755 });
   const hostScript = path.join(directory, 'host.mjs');
-  const sdkUrl = new URL('../node/index.mjs', import.meta.url).href;
+  const sdkUrl = new URL('../packages/node/index.mjs', import.meta.url).href;
   await writeFile(hostScript, `
 import { createModelProcessor } from ${JSON.stringify(sdkUrl)};
 const source = {

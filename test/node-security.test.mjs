@@ -2,11 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { zipSync, strToU8 } from 'fflate';
-import { parseGLBForRender } from '../node/load.mjs';
-import { installNodeAdapters } from '../node/adapters.mjs';
-import { ResourceResolver, ZipIndex } from '../node/resources.mjs';
-import { safeText } from '../node/diagnostics.mjs';
-import { inspectModel, convertModelToGlb, optimizeModel } from '../node/index.mjs';
+import { parseGLBForRender } from '../packages/node/load.mjs';
+import { installNodeAdapters } from '../packages/node/adapters.mjs';
+import { ResourceResolver, ZipIndex } from '../packages/node/resources.mjs';
+import { safeText } from '../packages/node/diagnostics.mjs';
+import { inspectModel, convertModelToGlb, optimizeModel } from '../packages/node/index.mjs';
 
 function glb(json) {
   const text=Buffer.from(JSON.stringify(json));const padded=Buffer.alloc(Math.ceil(text.length/4)*4,0x20);text.copy(padded);

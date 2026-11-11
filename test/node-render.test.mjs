@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { Document } from '@gltf-transform/core';
 import { KHRMaterialsUnlit } from '@gltf-transform/extensions';
 import sharp from 'sharp';
-import { createNodeIO } from '../node/load.mjs';
-import { renderModelImages } from '../node/index.mjs';
+import { createNodeIO } from '../packages/node/load.mjs';
+import { renderModelImages } from '../packages/node/index.mjs';
 
 test('native render: nonaligned dimensions and straight-alpha PNG', { skip: !process.env.MIVO_TEST_RENDER }, async () => {
   const document = new Document(), buffer = document.createBuffer();

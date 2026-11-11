@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head><meta charset="UTF-8" /><title>framing cross-end check</title></head>
+  <body>
+    <div id="status">running…</div>
+    <script type="module">
+      import { ViewerEngine } from './src/core/ViewerEngine.ts'
+      import * as THREE from 'three'
+      import { computeCameraPoses } from '@mivo/model-core'
+
+      const verts = []
+      for (const x of [-1, 1]) for (const y of [-0.5, 0.5]) for (const z of [-0.25, 0.25]) verts.push(`v ${x} ${y} ${z}`)
+      const faces = ['f 1 2 4','f 1 4 3','f 5 6 8','f 5 8 7','f 1 2 6','f 1 6 5','f 3 4 8','f 3 8 7','f 1 3 7','f 1 7 5','f 2 4 8','f 2 8 6']
+      const file = new File([[...verts, ...faces].join('\n')], 'box.obj', { type: 'text/plain' })
+
+      const host = document.createElement('div')
+      host.style.cssText = 'position:fixed;left:-10000px;top:0;width:256px;height:256px;overflow:hidden'
+      document.body.appendChild(host)
+      try {
+        const engine = new ViewerEngine(host, { width: 256, height: 256, headless: true, pixelRatio: 1, alpha: true })
+        await engine.loadFromFile(file)
+        const root = engine.getModelRoot()
+        root.updateMatrixWorld(true)
+        const box = new THREE.Box3().setFromObject(root)
+        const sphere = box.getBoundingSphere(new THREE.Sphere())
+        const size = box.getSize(new THREE.Vector3())
+        const bounds = { radius: sphere.radius, center: [sphere.center.x, sphere.center.y, sphere.center.z], size: [size.x, size.y, size.z] }
+        window.__bounds = bounds
+        window.__coreOrthoFront = computeCameraPoses(bounds, { aspect: 1, padding: 0.1, projection: 'orthographic', views: ['front'] })[0].ortho
+        const views = ['front','back','left','right','side','top','bottom','angled','none']
+        const poses = {}
+        for (const projection of ['perspective','orthographic']) {
+          for (const view of views) {
+            engine.frameRenderView(view, { padding: 0.1, projection })
+            const cam = engine.getCamera()
+            const expected = computeCameraPoses(bounds, { aspect: 1, padding: 0.1, projection, views: [view] })[0]
+            poses[projection + ':' + view] = {
+              position: cam.position.toArray(),
+              up: cam.up.toArray(),
+              near: cam.near,
+              far: cam.far,
+              fov: cam.fov ?? null,
+              ortho: cam.isOrthographicCamera ? { left: cam.left, right: cam.right, top: cam.top, bottom: cam.bottom } : null,
+              expectedOrtho: expected.ortho,
+              expectedPos: expected.position
+            }
+          }
+        }
+        window.__poses = poses
+        let maxErr = 0
+        const failures = []
+        const cmp = (a, b, label) => { const e = Math.abs(a - b); if (e > maxErr) maxErr = e; if (e > 1e-6) failures.push(label + ': ' + a + ' vs ' + b) }
+        for (const key of Object.keys(poses)) {
+          const b = poses[key]
+          for (let i = 0; i < 3; i++) cmp(b.expectedPos[i], b.position[i], key + '.pos')
+          for (let i = 0; i < 3; i++) cmp(b.up[i], b.up[i], key + '.up')
+          if (b.ortho) for (const k of ['left', 'right', 'top', 'bottom']) cmp(b.expectedOrtho[k], b.ortho[k], key + '.ortho.' + k)
+        }
+        window.__compareResult = { maxErr, failures, count: Object.keys(poses).length }
+        document.title = 'FRAMING_OK'
+        document.getElementById('status').textContent = 'ok'
+        engine.dispose()
+      } catch (error) {
+        window.__poses = { error: String(error) }
+        document.title = 'FRAMING_FAIL'
+        document.getElementById('status').textContent = String(error)
+        console.error(error)
+      }
+      host.remove()
+    </script>
+  </body>
+</html>

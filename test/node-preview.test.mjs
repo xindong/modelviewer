@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Document, NodeIO } from '@gltf-transform/core';
 import sharp from 'sharp';
-import { createModelPreviewProcessor } from '../node/index.mjs';
+import { createModelPreviewProcessor } from '../packages/node/index.mjs';
 
 const renderEnabled = Boolean(process.env.MIVO_TEST_RENDER);
 const device = process.env.MIVO_TEST_DEVICE ?? 'auto';

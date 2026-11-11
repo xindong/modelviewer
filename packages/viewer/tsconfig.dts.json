@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.build.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@mivo/model-core": ["../core/src/index.ts"],
+      "@mivo/model-core/*": ["../core/src/*.ts"]
+    }
+  }
+}

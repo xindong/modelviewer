@@ -4,7 +4,7 @@ import childProcess from 'node:child_process';
 import { syncBuiltinESMExports } from 'node:module';
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
-import { createModelProcessor } from '../node/index.mjs';
+import { createModelProcessor } from '../packages/node/index.mjs';
 
 function fakeWorker({ failSpawn = false, stderr = '' } = {}) {
   const child = new EventEmitter();

@@ -2,13 +2,17 @@
 
 **多格式 3D 模型查看器 SDK + Node CLI**：前端嵌入交互式查看器，命令行和后端处理模型信息、预览图、格式转换与优化。
 
-浏览器 SDK 基于 TypeScript + Three.js：默认提供完整可交互 UI，也支持按面板裁剪主题，或关掉 UI 只用无头引擎自绘界面。Node CLI 无需浏览器，可用于本地处理和服务端流水线。两者由同一个 npm 包提供。
+浏览器 SDK 基于 TypeScript + Three.js：默认提供完整可交互 UI，也支持按面板裁剪主题，或关掉 UI 只用无头引擎自绘界面。Node CLI 无需浏览器，可用于本地处理和服务端流水线。
+
+仓库为 monorepo，两端共享同一套平台无关核心（格式识别 / 视角 / 取景 / 渲染参数），按平台拆成两个 npm 包：浏览器 **`mivo-model-viewer`**、Node 工具与 CLI **`mivo-model-node`**。
 
 ```bash
+# 浏览器 SDK
 npm install mivo-model-viewer three
 
-# 命令行（Node ≥22.12.0）
-npx mivo-model-viewer --help
+# Node 工具 / CLI（Node ≥22.18.0，three 已内置依赖）
+npm install mivo-model-node
+npx mivo-model-node --help
 ```
 
 | | |
@@ -53,24 +57,24 @@ const viewer = createModelViewer('#app', {
 
 ## Node 后端工具 / CLI
 
-需要 **Node ≥22.12.0**、**Three ≥0.170**。CLI 提供 `info`、`render`、`convert`、`optimize` 和 `doctor`，模型任务在隔离 Node 子进程中执行。
+需要 **Node ≥22.18.0**（three 已作为依赖内置）。CLI 提供 `info`、`render`、`convert`、`optimize` 和 `doctor`，模型任务在隔离 Node 子进程中执行。
 
 ### 安装与运行
 
 ```bash
-# 安装到当前项目，通过 npx 运行
-npm install mivo-model-viewer three
-npx mivo-model-viewer --help
-npx mivo-model-viewer render ./model.glb -o ./preview.png
+# 安装到当前项目，通过 npx 运行（three 已作为依赖内置）
+npm install mivo-model-node
+npx mivo-model-node --help
+npx mivo-model-node render ./model.glb -o ./preview.png
 
 # 或全局安装，直接使用命令
-npm install -g mivo-model-viewer three
-mivo-model-viewer --help
-mivo-model-viewer --version
+npm install -g mivo-model-node
+mivo-model-node --help
+mivo-model-node --version
 
 # 在本仓库安装依赖后可直接运行，无需构建
 npm run cli -- --help
-node node/cli.mjs --help
+node packages/node/cli.mjs --help
 ```
 
 以下示例使用全局命令；项目内安装时，在命令前加 `npx` 即可。
@@ -79,26 +83,26 @@ node node/cli.mjs --help
 
 | 命令 | 用途 | 示例 |
 |------|------|------|
-| `info` | 读取解析后的模型信息 | `mivo-model-viewer info ./model.glb --json` |
-| `render` | 渲染 PNG / JPEG / WebP 预览图 | `mivo-model-viewer render ./model.glb -o ./preview.png` |
-| `convert` | 将支持的模型格式或 ZIP 资源包转为自包含 GLB | `mivo-model-viewer convert ./model.fbx -o ./model.glb` |
-| `optimize` | 对 GLB 减面、缩小贴图并压缩几何 | `mivo-model-viewer optimize ./model.glb -o ./model-small.glb` |
-| `doctor` | 检查原生 FBX 转换器及运行兼容性 | `mivo-model-viewer doctor --json` |
+| `info` | 读取解析后的模型信息 | `mivo-model-node info ./model.glb --json` |
+| `render` | 渲染 PNG / JPEG / WebP 预览图 | `mivo-model-node render ./model.glb -o ./preview.png` |
+| `convert` | 将支持的模型格式或 ZIP 资源包转为自包含 GLB | `mivo-model-node convert ./model.fbx -o ./model.glb` |
+| `optimize` | 对 GLB 减面、缩小贴图并压缩几何 | `mivo-model-node optimize ./model.glb -o ./model-small.glb` |
+| `doctor` | 检查原生 FBX 转换器及运行兼容性 | `mivo-model-node doctor --json` |
 
-每个命令均可通过 `--help` 查看完整参数，例如 `mivo-model-viewer render --help`。
+每个命令均可通过 `--help` 查看完整参数，例如 `mivo-model-node render --help`。
 
 ### 单张与多视角出图
 
 ```bash
 # 单张：默认正面、1024×1024、透视、原始材质、透明背景
-mivo-model-viewer render ./model.glb -o ./preview.png
+mivo-model-node render ./model.glb -o ./preview.png
 
 # 自定义尺寸、视角与材质模式
-mivo-model-viewer render ./model.glb -o ./preview.webp \
+mivo-model-node render ./model.glb -o ./preview.webp \
   --width 1600 --height 900 --view left --texture-mode clay
 
 # 多视角：只加载一次模型，输出到指定目录
-mivo-model-viewer render ./model.glb \
+mivo-model-node render ./model.glb \
   --views front,back,left,right,top --output-dir ./previews --size 1024
 ```
 
@@ -110,18 +114,18 @@ mivo-model-viewer render ./model.glb \
 
 ```bash
 # 普通转换：不主动减面或缩小贴图
-mivo-model-viewer convert ./model.fbx -o ./model.glb
+mivo-model-node convert ./model.fbx -o ./model.glb
 
 # 一步转换并优化，指定减面比例、误差和贴图最大尺寸
-mivo-model-viewer convert ./model.fbx -o ./model-small.glb --optimize \
+mivo-model-node convert ./model.fbx -o ./model-small.glb --optimize \
   --simplify-ratio 0.5 --simplify-error 0.001 --texture-size 2048
 
 # 对已有 GLB 优化，关闭减面并使用 Draco 几何压缩
-mivo-model-viewer optimize ./model.glb -o ./model-small.glb \
+mivo-model-node optimize ./model.glb -o ./model-small.glb \
   --no-simplify --compress draco
 
 # ZIP 资源包指定入口，并增加关联资源搜索目录
-mivo-model-viewer convert ./assets.zip -o ./model.glb \
+mivo-model-node convert ./assets.zip -o ./model.glb \
   --entry models/model.obj --resource-dir ./textures
 ```
 
@@ -142,8 +146,8 @@ mivo-model-viewer convert ./assets.zip -o ./model.glb \
 | `--fbx-binary <path>` | 指定原生 FBX 转换器的可执行文件 |
 
 ```bash
-mivo-model-viewer info ./model.glb --json > ./model-info.json
-mivo-model-viewer convert ./model.fbx -o ./model.glb --json > ./convert-result.json
+mivo-model-node info ./model.glb --json > ./model-info.json
+mivo-model-node convert ./model.fbx -o ./model.glb --json > ./convert-result.json
 ```
 
 模型任务的 JSON 结果包含 `schemaVersion`、`ok`、`command`、`input`、`entry`、`outputs`、`data`、`warnings`、`error`。CLI 的 `outputs` 返回输出文件绝对路径和 `byteLength`；`data.timings` 提供处理耗时（毫秒）。退出码：`0` 成功、`1` 运行失败、`2` 参数错误、`130` 中断。
@@ -153,7 +157,7 @@ mivo-model-viewer convert ./model.fbx -o ./model.glb --json > ./convert-result.j
 后端直接调用（模型任务在隔离 Node 子进程中执行）：
 
 ```js
-import { createModelProcessor } from 'mivo-model-viewer/node'
+import { createModelProcessor } from 'mivo-model-node'
 import { writeFile } from 'node:fs/promises'
 
 const processor = createModelProcessor({ concurrency: 1, maxQueue: 32 })
@@ -173,12 +177,12 @@ try {
 
 `createModelPreviewProcessor(options?)` 专用于高频预览，返回 `{ renderModelImages, close }`。
 每个实例按需启动一个常驻隔离 worker，串行执行任务，复用模型准备缓存和 GPU；原有
-`createModelProcessor`、独立 Node 方法和 CLI 保持原有行为。loader、GPU 与进程清理实现位于
-独立的 `node/preview/`，基础校验、资源解析、像素处理、设备选择、进程清理与原生 FBX 转换
-复用 `node/` 公共实现。导入 Node 入口不会在宿主进程初始化图形设备。
+`createModelProcessor`、独立 Node 方法和 CLI 保持原有行为。常驻预览的调度（pool + worker）位于
+`packages/node/preview/`，与一次性任务共用统一管线；基础校验、资源解析、像素处理、设备选择、
+进程清理与原生 FBX 转换复用 `packages/node/` 公共实现。导入 Node 入口不会在宿主进程初始化图形设备。
 
 ```js
-import { createModelPreviewProcessor } from 'mivo-model-viewer/node'
+import { createModelPreviewProcessor } from 'mivo-model-node'
 import { readFile, writeFile } from 'node:fs/promises'
 
 const processor = createModelPreviewProcessor({
@@ -272,11 +276,11 @@ Node 的 FBX 默认使用依赖内的 FBX2glTF，不需要全局安装转换器�
 文件、字节和 ZIP 内 FBX 的 `convert`、`info`、`render` 使用同一原生加载流程。
 
 ```bash
-mivo-model-viewer doctor --json
-mivo-model-viewer convert ./model.fbx -o ./model.glb --json
+mivo-model-node doctor --json
+mivo-model-node convert ./model.fbx -o ./model.glb --json
 # 显式使用旧 Three.js 后端，或指定自有可执行文件
-mivo-model-viewer convert ./model.fbx -o ./model.glb --fbx-backend three
-mivo-model-viewer doctor --fbx-binary /absolute/path/FBX2glTF --json
+mivo-model-node convert ./model.fbx -o ./model.glb --fbx-backend three
+mivo-model-node doctor --fbx-binary /absolute/path/FBX2glTF --json
 ```
 
 Node API 对应 `fbxBackend: 'native' | 'three'`、`fbxBinary`。
@@ -818,20 +822,24 @@ npm run build:pages  # GitHub Pages 站点 → dist-demo/
 
 STEP 实验性展示在 Demo 中需本地已安装 `occt-import-js`（devDependency 已包含）。
 
-仓库结构：
+仓库结构（npm workspaces monorepo）：
 
 ```text
-src/
-  core/           # 无 UI 引擎（ViewerEngine / ModelLoader / …）
-  ui/             # 默认 UI 组件（createModelViewer）
-  index.ts        # 包主入口
-src/main.ts       # Demo 入口（进 Pages，不进 npm 包）
-node/             # Node API、CLI 与隔离任务实现
-  cli.mjs         # mivo-model-viewer 命令入口
-  index.mjs       # mivo-model-viewer/node 入口
+packages/
+  core/           # @mivo/model-core：平台无关共享核（私有，构建时内联）
+    src/          # views · formats · framing · renderOptions
+  viewer/         # mivo-model-viewer：浏览器 SDK
+    src/core/     # 无 UI 引擎（ViewerEngine / ModelLoader / …）
+    src/ui/       # 默认 UI 组件（createModelViewer）
+    src/main.ts   # Demo 入口（进 Pages，不进 npm 包）
+  node/           # mivo-model-node：Node API、CLI 与隔离任务实现
+    cli.mjs       # mivo-model-node 命令入口
+    index.mjs     # Node API 入口
+    preview/      # 常驻预览调度（pool + worker，复用统一管线）
+    core/         # 共享核（开发态符号链接 → ../core/src；发布态编译为 JS）
 docs/cli-design.md # CLI 参数、部署与耗时说明
 Dockerfile.node   # Linux 软件渲染容器
-test/node-*.test.mjs # Node 工具行为测试
+test/             # Node 工具行为测试 + 共享核/跨端一致性测试
 .github/workflows/deploy-pages.yml
 ```
 
@@ -841,15 +849,18 @@ GitHub Pages：推送到 `main` 后由 Actions 构建 Demo 并部署（站点路
 
 ## 发布
 
-npm 包：`mivo-model-viewer`（维护账号 `miragari`）；版本以 `package.json` 为准。
+两个 npm 包（维护账号 `miragari`）：浏览器 `mivo-model-viewer`、Node `mivo-model-node`；版本以各 `package.json` 为准，建议同步发布。
 
 ```bash
-npm run build
-npm pack --dry-run
-npm publish
+# 浏览器 SDK（vite 内联共享核 JS + rollup-plugin-dts 内联类型）
+npm run build --workspace mivo-model-viewer
+npm publish --workspace mivo-model-viewer
+
+# Node 工具（prepack 自动把共享核编译为 JS 并 remap #core，postpack 恢复符号链接）
+npm publish --workspace mivo-model-node
 ```
 
-破坏性 API 变更请升 major；`three` 保持 peer 范围兼容。
+破坏性 API 变更请升 major；浏览器端 `three` 保持 peer 范围兼容，Node 端 `three` 为内置依赖。开发态 Node 直接跑 TS 共享核（原生类型剥离，免构建）；发布态因 Node 不剥离 node_modules 下的 TS，prepack 会编译为 JS。
 
 ---
 
