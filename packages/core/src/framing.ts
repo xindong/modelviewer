@@ -42,6 +42,11 @@ export interface CameraPose {
 
 export const RENDER_FOV = 45
 
+/** Oblique views project beyond the axis-aligned box, so they frame by the bounding sphere. */
+export function isObliqueView(view: PresetView): boolean {
+  return view === 'none' || view === 'angled'
+}
+
 function normalize(vec: readonly [number, number, number]): [number, number, number] {
   const length = Math.hypot(vec[0], vec[1], vec[2]) || 1
   return [vec[0] / length, vec[1] / length, vec[2] / length]
@@ -55,8 +60,8 @@ export function computeCameraPoses(bounds: FramingBounds, options: FramingOption
   const radius = Math.max(bounds.radius, 0.0001)
   const [cx, cy, cz] = bounds.center
   const axisExtent = Math.max(bounds.size[0], bounds.size[1], bounds.size[2], 0.0001) / 2
-  // Oblique (`none`) views need the bounding sphere to avoid clipping rotated corners.
-  const halfExtent = (options.views.includes('none') ? radius : axisExtent) * (1 + padding)
+  // Any oblique view in the batch needs the bounding sphere to avoid clipping rotated corners.
+  const halfExtent = (options.views.some(isObliqueView) ? radius : axisExtent) * (1 + padding)
   const near = Math.max(radius / 10000, 0.000001)
   const baseFar = radius * 100 + near
 

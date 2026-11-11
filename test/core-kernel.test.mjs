@@ -4,6 +4,7 @@ import {
   extFromMagic, extFromMime, extensionOf, hasModelExtension, ensureModelExtension,
   MODEL_FORMATS, VIEW_DIRECTIONS, PRESET_VIEWS, DEFAULT_RENDER_PADDING,
   computeCameraPoses, RENDER_FOV,
+  isObliqueView,
   defaultBackground, assertValidPadding, RENDER_DEFAULTS, TEXTURE_MODES, IMAGE_FORMATS,
   MAX_RENDER_PIXELS, MAX_RENDER_DIMENSION,
   SLOT_KEYWORDS, matchTextureByKeywords, findTextureByReference, textureBasename, stripTextureExt,
@@ -75,6 +76,19 @@ test('computeCameraPoses: none view frames by bounding sphere, not axis extent',
     { aspect: 1, padding: 0, projection: 'orthographic', views: ['none'] }
   );
   close(pose.ortho.right, 1);
+});
+
+test('oblique views (none/angled) frame by bounding sphere; axis views do not', () => {
+  assert.equal(isObliqueView('none'), true);
+  assert.equal(isObliqueView('angled'), true);
+  for (const view of ['front', 'back', 'left', 'right', 'side', 'top', 'bottom']) assert.equal(isObliqueView(view), false);
+  const bounds = { radius: Math.sqrt(3), center: [0, 0, 0], size: [2, 2, 2] };
+  const [angled] = computeCameraPoses(bounds, { aspect: 1, padding: 0.1, projection: 'orthographic', views: ['angled'] });
+  close(angled.ortho.right, Math.sqrt(3) * 1.1);
+  const [front] = computeCameraPoses(bounds, { aspect: 1, padding: 0.1, projection: 'orthographic', views: ['front'] });
+  close(front.ortho.right, 1.1);
+  const batch = computeCameraPoses(bounds, { aspect: 1, padding: 0.1, projection: 'orthographic', views: ['front', 'angled'] });
+  for (const pose of batch) close(pose.ortho.right, Math.sqrt(3) * 1.1);
 });
 
 test('computeCameraPoses: top/bottom up vectors and multi-view order', () => {

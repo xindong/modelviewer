@@ -416,7 +416,7 @@ export class ViewerEngine {
    * 离屏出图取景：用共享 core 的规范算法（与 Node 渲染逐式一致）摆放相机。
    * 独立于交互取景（refitModel / setPresetView），供 renderModelImage 使用。
    */
-  frameRenderView(view: RenderPresetView, options: { padding?: number; projection?: ProjectionMode } = {}): boolean {
+  frameRenderView(view: RenderPresetView, options: { padding?: number; projection?: ProjectionMode; views?: RenderPresetView[] } = {}): boolean {
     const root = this.modelRoot
     if (!root) return false
     root.updateMatrixWorld(true)
@@ -424,14 +424,17 @@ export class ViewerEngine {
     if (box.isEmpty()) return false
     const sphere = box.getBoundingSphere(new THREE.Sphere())
     const size = box.getSize(new THREE.Vector3())
-    const [pose] = computeCameraPoses(
+    // 整批视角一起参与取景（与 Node 一致）：批内含斜视角时所有视角按包围球取景。
+    const batchViews = options.views?.length ? options.views : [view]
+    const poses = computeCameraPoses(
       {
         radius: sphere.radius,
         center: [sphere.center.x, sphere.center.y, sphere.center.z],
         size: [size.x, size.y, size.z]
       },
-      { aspect: this.getAspect(), padding: options.padding, projection: options.projection ?? 'perspective', views: [view] }
+      { aspect: this.getAspect(), padding: options.padding, projection: options.projection ?? 'perspective', views: batchViews }
     )
+    const pose = poses.find((candidate) => candidate.view === view) ?? poses[0]
     this.applyRenderPose(pose)
     return true
   }
@@ -969,8 +972,17 @@ export class ViewerEngine {
       case 'side':
         position.set(distance, 0, 0)
         break
+      case 'left':
+        position.set(distance, 0, 0)
+        break
+      case 'right':
+        position.set(-distance, 0, 0)
+        break
       case 'top':
         position.set(0, distance, 0.001)
+        break
+      case 'bottom':
+        position.set(0, -distance, 0.001)
         break
       case 'angled': {
         // 方位 35°（朝 +X 偏）、仰角 25°：三个面同时可见，立方体不再退化成一块平面

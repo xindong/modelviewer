@@ -42,7 +42,11 @@
               fov: cam.fov ?? null,
               ortho: cam.isOrthographicCamera ? { left: cam.left, right: cam.right, top: cam.top, bottom: cam.bottom } : null,
               expectedOrtho: expected.ortho,
-              expectedPos: expected.position
+              expectedPos: expected.position,
+              expectedUp: expected.up,
+              expectedNear: expected.near,
+              expectedFar: expected.far,
+              expectedFov: expected.fov
             }
           }
         }
@@ -53,12 +57,15 @@
         for (const key of Object.keys(poses)) {
           const b = poses[key]
           for (let i = 0; i < 3; i++) cmp(b.expectedPos[i], b.position[i], key + '.pos')
-          for (let i = 0; i < 3; i++) cmp(b.up[i], b.up[i], key + '.up')
+          for (let i = 0; i < 3; i++) cmp(b.expectedUp[i], b.up[i], key + '.up')
+          cmp(b.expectedNear, b.near, key + '.near')
+          cmp(b.expectedFar, b.far, key + '.far')
+          if (b.fov != null) cmp(b.expectedFov, b.fov, key + '.fov')
           if (b.ortho) for (const k of ['left', 'right', 'top', 'bottom']) cmp(b.expectedOrtho[k], b.ortho[k], key + '.ortho.' + k)
         }
         window.__compareResult = { maxErr, failures, count: Object.keys(poses).length }
-        document.title = 'FRAMING_OK'
-        document.getElementById('status').textContent = 'ok'
+        document.title = failures.length ? 'FRAMING_FAIL' : 'FRAMING_OK'
+        document.getElementById('status').textContent = failures.length ? failures.join('; ') : 'ok'
         engine.dispose()
       } catch (error) {
         window.__poses = { error: String(error) }

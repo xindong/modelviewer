@@ -191,7 +191,7 @@ export async function renderOne(
   format: ImageFormat
 ): Promise<RenderedImage> {
   // 离屏出图用共享 core 取景（与 Node 渲染逐式一致）；none 为固定 3/4 机位
-  engine.frameRenderView(view ?? 'front', { padding: options.padding, projection: options.projection })
+  engine.frameRenderView(view ?? 'front', { padding: options.padding, projection: options.projection, views: options.views })
 
   const blob = await engine.renderToBlob({
     format,

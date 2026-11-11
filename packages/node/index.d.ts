@@ -1,8 +1,8 @@
 /** Pure Node entry point. No browser or GPU initialization occurs in the host process. */
 export type ModelSource = string | { bytes: Uint8Array; fileName: string; resources?: Record<string, Uint8Array> };
-/** Server-compatible glTF Y-up views: left is +X, right is -X; side aliases left. */
+/** Server-compatible glTF Y-up views: left is +X, right is -X; side aliases left; angled is a 3/4 view. */
 export type PresetView =
-  | 'front' | 'back' | 'left' | 'right' | 'side' | 'top' | 'bottom' | 'none';
+  | 'front' | 'back' | 'left' | 'right' | 'side' | 'top' | 'bottom' | 'angled' | 'none';
 export interface Warning { code: string; message: string; affectsFidelity: boolean; resource?: string; details?: unknown }
 export interface CommonOptions {
   /** Native FBX2glTF by default; three retains the legacy loader. */

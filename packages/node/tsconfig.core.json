@@ -4,7 +4,7 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "declaration": true,
-    "outDir": "./core",
+    "outDir": "./.core-build",
     "rootDir": "./.core-src",
     "strict": true,
     "skipLibCheck": true

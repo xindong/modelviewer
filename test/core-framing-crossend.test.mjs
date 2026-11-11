@@ -34,3 +34,15 @@ test('a batch containing none frames every view by the bounding sphere (Node bat
   const sphereHalfExtent = bounds.radius * 1.1;
   for (const pose of poses) close(pose.ortho.right, sphereHalfExtent, `${pose.view}.ortho.right`);
 });
+
+test('a batch containing angled (without none) also frames every view by the sphere', () => {
+  const poses = computeCameraPoses(bounds, { aspect: 1, padding: 0.1, projection: 'orthographic', views: ['front', 'angled'] });
+  const sphereHalfExtent = bounds.radius * 1.1;
+  for (const pose of poses) close(pose.ortho.right, sphereHalfExtent, `${pose.view}.ortho.right`);
+});
+
+test('an axis-only batch frames by the axis extent, not the sphere', () => {
+  const poses = computeCameraPoses(bounds, { aspect: 1, padding: 0.1, projection: 'orthographic', views: ['front', 'top'] });
+  const axisHalfExtent = (Math.max(...bounds.size) / 2) * 1.1;
+  for (const pose of poses) close(pose.ortho.right, axisHalfExtent, `${pose.view}.ortho.right`);
+});
