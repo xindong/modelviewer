@@ -1,6 +1,6 @@
 {
   "name": "@mivo/model-core",
-  "version": "0.8.3",
+  "version": "0.9.0",
   "private": true,
   "description": "Platform-agnostic domain kernel shared by the browser viewer and Node tooling.",
   "type": "module",

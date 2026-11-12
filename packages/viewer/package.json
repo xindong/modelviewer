@@ -1,6 +1,6 @@
 {
   "name": "mivo-model-viewer",
-  "version": "0.8.3",
+  "version": "0.9.0",
   "description": "Browser 3D viewer SDK: default UI + headless engine, multi-format loading and offscreen rendering.",
   "type": "module",
   "license": "MIT",
@@ -60,7 +60,7 @@
     "fflate": "^0.8.3"
   },
   "devDependencies": {
-    "@mivo/model-core": "0.8.3",
+    "@mivo/model-core": "0.9.0",
     "@types/three": "^0.170.0",
     "dts-bundle-generator": "^9.5.1",
     "rollup": "^4.68.2",
