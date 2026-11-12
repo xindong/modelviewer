@@ -1,7 +1,7 @@
 {
   "name": "mivo-model-viewer-monorepo",
   "private": true,
-  "version": "0.8.3",
+  "version": "0.9.0",
   "description": "Monorepo: browser 3D viewer SDK (mivo-model-viewer) + pure Node model tooling (mivo-model-node).",
   "type": "module",
   "license": "MIT",
