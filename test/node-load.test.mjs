@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { Document, Format } from '@gltf-transform/core';
 import { zipSync, strToU8 } from 'fflate';
 import sharp from 'sharp';
-import { createNodeIO } from '../node/load.mjs';
-import { inspectModel, convertModelToGlb, optimizeModel } from '../node/index.mjs';
+import { createNodeIO } from '../packages/node/load.mjs';
+import { inspectModel, convertModelToGlb, optimizeModel } from '../packages/node/index.mjs';
 
 const obj='mtllib materials/model.mtl\no triangle\nv 0 0 0\nv 1 0 0\nv 0 1 0\nvt 0 0\nvt 1 0\nvt 0 1\nusemtl red\nf 1/1 2/2 3/3\n';
 const mtl='newmtl red\nKd 1 0 0\nmap_Kd ../textures/red.png\n';

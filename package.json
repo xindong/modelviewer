@@ -1,106 +1,34 @@
 {
-  "name": "mivo-model-viewer",
+  "name": "mivo-model-viewer-monorepo",
+  "private": true,
   "version": "0.8.3",
-  "description": "Browser 3D viewer SDK and pure Node model processing CLI: inspect, render, convert and optimize.",
+  "description": "Monorepo: browser 3D viewer SDK (mivo-model-viewer) + pure Node model tooling (mivo-model-node).",
   "type": "module",
   "license": "MIT",
-  "keywords": [
-    "three.js",
-    "3d",
-    "model-viewer",
-    "gltf",
-    "glb",
-    "fbx",
-    "obj",
-    "step",
-    "vrml",
-    "viewer",
-    "sdk"
+  "workspaces": [
+    "packages/*"
   ],
-  "files": [
-    "dist",
-    "node",
-    "README.md",
-    "docs/cli-design.md",
-    "Dockerfile.node",
-    "THIRD_PARTY_FBX2GLTF_LICENSE.txt",
-    "LICENSE"
-  ],
-  "sideEffects": false,
-  "main": "./dist/mivo-model-viewer.js",
-  "module": "./dist/mivo-model-viewer.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/mivo-model-viewer.js"
-    },
-    "./core": {
-      "types": "./dist/core/index.d.ts",
-      "import": "./dist/mivo-model-viewer-core.js"
-    },
-    "./package.json": "./package.json",
-    "./node": {
-      "types": "./node/index.d.ts",
-      "import": "./node/index.mjs"
-    }
-  },
   "scripts": {
-    "dev": "vite",
-    "typecheck": "tsc --noEmit",
-    "build:lib": "vite build --config vite.lib.config.ts && tsc -p tsconfig.build.json",
-    "build:demo": "tsc --noEmit && vite build",
-    "build:pages": "tsc --noEmit && vite build --base=/modelviewer/",
-    "build": "npm run typecheck && npm run build:lib",
-    "preview": "vite preview",
-    "prepublishOnly": "npm run build",
-    "test:node": "node --test test/node-*.test.mjs",
-    "cli": "node node/cli.mjs"
-  },
-  "peerDependencies": {
-    "occt-import-js": ">=0.0.23",
-    "three": ">=0.170.0"
-  },
-  "peerDependenciesMeta": {
-    "occt-import-js": {
-      "optional": true
-    }
-  },
-  "dependencies": {
-    "@gltf-transform/core": "4.5.1",
-    "@gltf-transform/extensions": "4.5.1",
-    "@gltf-transform/functions": "4.5.1",
-    "commander": "15.0.0",
-    "draco3dgltf": "1.5.7",
-    "fflate": "^0.8.3",
-    "linkedom": "0.18.13",
-    "meshoptimizer": "1.2.0",
-    "sharp": "0.35.5"
+    "dev": "npm run dev --workspace mivo-model-viewer",
+    "typecheck": "npm run typecheck --workspace mivo-model-viewer",
+    "build": "npm run build --workspace mivo-model-viewer",
+    "build:lib": "npm run build:lib --workspace mivo-model-viewer",
+    "build:demo": "npm run build:demo --workspace mivo-model-viewer",
+    "build:pages": "npm run build:pages --workspace mivo-model-viewer",
+    "preview": "npm run preview --workspace mivo-model-viewer",
+    "test:node": "node --test test/node-*.test.mjs test/core-*.test.mjs",
+    "cli": "node packages/node/cli.mjs"
   },
   "devDependencies": {
     "@types/three": "^0.170.0",
-    "three": "^0.170.0",
     "typescript": "^5.6.3",
     "vite": "^5.4.10"
   },
   "engines": {
-    "node": ">=22.12.0"
-  },
-  "bin": {
-    "mivo-model-viewer": "./node/cli.mjs"
-  },
-  "optionalDependencies": {
-    "@napi-rs/canvas": "1.0.10",
-    "fbx2gltf": "0.9.7-p1",
-    "occt-import-js": "0.0.23",
-    "webgpu": "0.6.2"
+    "node": ">=22.18.0"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/xindong/modelviewer.git"
-  },
-  "homepage": "https://github.com/xindong/modelviewer#readme",
-  "bugs": {
-    "url": "https://github.com/xindong/modelviewer/issues"
   }
 }

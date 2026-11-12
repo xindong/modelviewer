@@ -1,6 +1,6 @@
 # 纯 Node 模型处理：CLI 与后端 API
 
-实现基线：2026-10-09。Node ≥22.12、Three ≥0.170、glTF Transform 固定 4.5.1。
+实现基线：2026-10-09。Node ≥22.18、Three ≥0.170、glTF Transform 固定 4.5.1。
 
 ## 定位
 
@@ -17,17 +17,17 @@
 ## 命令
 
 ```bash
-node node/cli.mjs info ./model.fbx --json
-node node/cli.mjs render ./model.glb -o ./preview.png
-node node/cli.mjs render ./model.glb --views front,back,side,top --output-dir ./previews
-node node/cli.mjs convert ./model.obj -o ./model.glb
-node node/cli.mjs optimize ./model.glb -o ./model-small.glb
-node node/cli.mjs convert ./model.fbx -o ./model-small.glb --optimize
-node node/cli.mjs convert ./model.fbx -o ./model-small.glb --optimize \
+node packages/node/cli.mjs info ./model.fbx --json
+node packages/node/cli.mjs render ./model.glb -o ./preview.png
+node packages/node/cli.mjs render ./model.glb --views front,back,side,top --output-dir ./previews
+node packages/node/cli.mjs convert ./model.obj -o ./model.glb
+node packages/node/cli.mjs optimize ./model.glb -o ./model-small.glb
+node packages/node/cli.mjs convert ./model.fbx -o ./model-small.glb --optimize
+node packages/node/cli.mjs convert ./model.fbx -o ./model-small.glb --optimize \
   --simplify-ratio 0.5 --simplify-error 0.001 --texture-size 2048 --compress meshopt
 ```
 
-npm 包安装后使用 `mivo-model-viewer`，无需构建 CLI。根入口与 `./core` 仍为浏览器 SDK；新增 `./node` 为独立后端入口。
+npm 包安装后使用 `mivo-model-node`，无需构建 CLI。浏览器 SDK 为独立包 `mivo-model-viewer`（根入口与 `./core`）；Node 工具与 CLI 为 `mivo-model-node`，两端共享平台无关核心 `@mivo/model-core`。
 
 ### 公共参数与输出
 
@@ -68,7 +68,7 @@ POINTS 禁止默认 ratio=0 简化，需指定正比例或 --no-simplify。无�
 ## 后端 API 与隔离
 
 ```js
-import { createModelProcessor } from 'mivo-model-viewer/node';
+import { createModelProcessor } from 'mivo-model-node';
 const processor = createModelProcessor({ concurrency: 1, maxQueue: 32 });
 try {
   const result = await processor.convertModelToGlb('/data/model.fbx', {

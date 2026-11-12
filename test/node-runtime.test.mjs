@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Document } from '@gltf-transform/core';
-import { createNodeIO } from '../node/load.mjs';
-import { createModelProcessor, inspectModel, convertModelToGlb, optimizeModel } from '../node/index.mjs';
+import { createNodeIO } from '../packages/node/load.mjs';
+import { createModelProcessor, inspectModel, convertModelToGlb, optimizeModel } from '../packages/node/index.mjs';
 
 async function fixture() {
   const document = new Document();
@@ -83,7 +83,7 @@ test('worker errors carry elapsed timings without claiming unfinished stages com
 });
 
 test('optimization failure retains timing of completed simplify stage', async () => {
-  const { optimizeDocument } = await import('../node/optimize.mjs');
+  const { optimizeDocument } = await import('../packages/node/optimize.mjs');
   const d = await (await createNodeIO()).readBinary((await fixture()).bytes);
   const transform = d.transform.bind(d);
   d.transform = async (...args) => {

@@ -8,13 +8,13 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { zipSync, strToU8 } from 'fflate';
 import sharp from 'sharp';
-import { inspectModel, convertModelToGlb } from '../node/index.mjs';
-import { createNodeIO } from '../node/load.mjs';
-import { inspectDocument } from '../node/inspect.mjs';
-import { validateOptions } from '../node/options.mjs';
-import { probeFbxBinary, resolveFbxBinary } from '../node/native-fbx.mjs';
+import { inspectModel, convertModelToGlb } from '../packages/node/index.mjs';
+import { createNodeIO } from '../packages/node/load.mjs';
+import { inspectDocument } from '../packages/node/inspect.mjs';
+import { validateOptions } from '../packages/node/options.mjs';
+import { probeFbxBinary, resolveFbxBinary } from '../packages/node/native-fbx.mjs';
 
-const cli = fileURLToPath(new URL('../node/cli.mjs', import.meta.url));
+const cli = fileURLToPath(new URL('../packages/node/cli.mjs', import.meta.url));
 const vertices = [-1, -1, -1, 1, -1, -1, 1, 1, -1, -1, 1, -1,
   -1, -1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1];
 const polygons = [0, 2, -2, 0, 3, -3, 4, 5, -7, 4, 6, -8,

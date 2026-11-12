@@ -4,8 +4,8 @@ import { mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { Document } from '@gltf-transform/core';
-import { createNodeIO } from '../node/load.mjs';
-import { convertModelToGlb } from '../node/index.mjs';
+import { createNodeIO } from '../packages/node/load.mjs';
+import { convertModelToGlb } from '../packages/node/index.mjs';
 
 test('strict detects missing textures after log truncation and across chunks', async t => {
   const directory = await mkdtemp(path.join(tmpdir(), 'mivo-native-log-'));

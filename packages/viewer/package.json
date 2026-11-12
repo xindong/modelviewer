@@ -1,0 +1,80 @@
+{
+  "name": "mivo-model-viewer",
+  "version": "0.8.3",
+  "description": "Browser 3D viewer SDK: default UI + headless engine, multi-format loading and offscreen rendering.",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "three.js",
+    "3d",
+    "model-viewer",
+    "gltf",
+    "glb",
+    "fbx",
+    "obj",
+    "step",
+    "vrml",
+    "viewer",
+    "sdk"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "main": "./dist/mivo-model-viewer.js",
+  "module": "./dist/mivo-model-viewer.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/mivo-model-viewer.js"
+    },
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/mivo-model-viewer-core.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "tsc --noEmit",
+    "build:lib": "vite build --config vite.lib.config.ts && tsc -p tsconfig.build.json && rollup -c rollup.dts.config.mjs && node scripts/clean-dts.mjs",
+    "build:demo": "tsc --noEmit && vite build",
+    "build:pages": "tsc --noEmit && vite build --base=/modelviewer/",
+    "build": "npm run typecheck && npm run build:lib",
+    "preview": "vite preview",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "occt-import-js": ">=0.0.23",
+    "three": ">=0.170.0"
+  },
+  "peerDependenciesMeta": {
+    "occt-import-js": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "fflate": "^0.8.3"
+  },
+  "devDependencies": {
+    "@mivo/model-core": "0.8.3",
+    "@types/three": "^0.170.0",
+    "dts-bundle-generator": "^9.5.1",
+    "rollup": "^4.68.2",
+    "rollup-plugin-dts": "^6.5.1",
+    "three": "^0.170.0",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xindong/modelviewer.git"
+  },
+  "homepage": "https://github.com/xindong/modelviewer#readme",
+  "bugs": {
+    "url": "https://github.com/xindong/modelviewer/issues"
+  }
+}
